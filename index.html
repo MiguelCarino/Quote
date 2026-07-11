@@ -1,143 +1,176 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="icon" type="image/webp" href="logo.webp">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Configurable Quoting Tool</title>
-    
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/i18next/23.2.3/i18next.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/i18next-browser-languagedetector/7.1.0/i18nextBrowserLanguageDetector.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Red+Hat+Text:ital,wght@0,300..700;1,300..700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Red+Hat+Display:wght@700;900&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            /* Default Colors - overwritten by JSON */
-            --primary: #2563eb; 
-            --primary-hover: #1d4ed8;
-            --bg-body: #f1f5f9;
-            --bg-surface: #ffffff;
-            --bg-nav: #61bad2;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --border: #e2e8f0;
-            --success: #10b981;
+            --accent: #eab308;            /* Sharp Gold */
+            --primary: #eab308;           /* alias (JSON theme may override) */
+            --primary-hover: #fbbf24;
+            --bg-body: #050505;
+            --bg-surface: #0b0b0b;
+            --bg-elev: #0d0d0d;
+            --text-main: #f5f5f5;
+            --text-muted: #8a8a8a;
+            --border: #262626;
+            --success: #22c55e;
             --danger: #ef4444;
             --warning: #f59e0b;
+            --sans: 'IBM Plex Sans', 'Noto Sans JP', system-ui, -apple-system, sans-serif;
+            --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+            --display: 'Red Hat Display', var(--sans);
         }
 
-        body { font-family: 'Inter', 'Noto Sans JP', sans-serif; margin: 0; background-color: var(--bg-body); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; transition: background-color 0.3s; }
+        * { box-sizing: border-box; }
+        body { font-family: var(--sans); margin: 0; background: var(--bg-body); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; }
 
-        /* Navbar */
-        .navbar {
-            background-color: var(--bg-nav); border-bottom: 1px solid var(--border); 
-            padding: 0 24px; height: 60px; flex-shrink: 0;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .brand-link { text-decoration: none; color: inherit; display: flex; align-items: center; gap: 12px; transition: opacity 0.2s; }
-        .brand-link:hover { opacity: 0.8; }
-        .nav-logo { height: 32px; width: auto; border-radius: 4px; }
-        .brand-text { font-weight: 700; font-size: 1.1rem; color: var(--text-main); }
+        /* Language switch — relocated INTO the Carino navbar via [data-carino-actions] */
+        .lang-switch { display: flex; gap: 2px; background: transparent; padding: 2px; border: 1px solid var(--border); border-radius: 6px; }
+        .lang-btn { background: transparent; border: none; padding: 4px 10px; font-family: var(--mono); font-size: 0.66rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted); cursor: pointer; border-radius: 4px; transition: 0.15s; }
+        .lang-btn:hover { color: var(--accent); }
+        .lang-btn.active { background: var(--accent); color: #050505; }
 
-        /* Language Switcher */
-        .lang-switch { display: flex; background: #f8fafc; padding: 3px; border-radius: 6px; border: 1px solid var(--border); }
-        .lang-btn {
-            background: transparent; border: none; padding: 4px 12px; font-size: 0.8rem; 
-            font-weight: 600; color: var(--text-muted); cursor: pointer; border-radius: 4px;
-        }
-        .lang-btn.active { background: white; color: var(--primary); box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-
-        /* Main Layout */
         .main-container { display: flex; flex: 1; overflow: hidden; }
-        
-        /* Sidebar */
+
         .sidebar {
             width: 380px; background: var(--bg-surface); border-right: 1px solid var(--border);
-            padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px;
+            padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 22px;
         }
 
-        /* Dropzone */
         .dropzone {
             border: 2px dashed var(--border); border-radius: 8px; padding: 20px;
-            text-align: center; cursor: pointer; transition: all 0.2s; background: #f8fafc;
+            text-align: center; cursor: pointer; transition: all 0.2s; background: var(--bg-elev);
         }
-        .dropzone:hover, .dropzone.dragover { border-color: var(--primary); background: #eff6ff; }
-        .dropzone.success { border-color: var(--success); background: #ecfdf5; }
-        .dropzone p { margin: 0; font-size: 0.85rem; color: var(--text-muted); pointer-events: none; }
-        .dropzone strong { color: var(--primary); pointer-events: none; }
+        .dropzone:hover, .dropzone.dragover { border-color: var(--accent); background: rgba(234,179,8,0.05); }
+        .dropzone.success { border-color: var(--success); background: rgba(34,197,94,0.06); }
+        .dropzone p { margin: 6px 0 0; font-family: var(--mono); font-size: 0.7rem; color: var(--text-muted); pointer-events: none; }
+        .dropzone strong { color: var(--accent); pointer-events: none; font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.03em; }
         .dropzone.success strong { color: var(--success); }
 
-        /* Forms */
-        .section-title { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 700; margin-bottom: 10px; border-bottom: 1px solid var(--border); padding-bottom: 5px; }
-        
-        /* Fixed: Flex Wrap to prevent overflow */
+        .section-title { font-family: var(--mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); font-weight: 700; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+
         .form-row { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
-        .form-group { flex: 1; display: flex; flex-direction: column; min-width: 100px; } /* Min width prevents collapse */
-        
-        label { font-size: 0.8rem; font-weight: 500; color: var(--text-main); margin-bottom: 4px; }
-        input, select { 
-            padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; 
-            font-size: 0.9rem; font-family: inherit; transition: border-color 0.2s; width: 100%; box-sizing: border-box;
+        .form-group { flex: 1; display: flex; flex-direction: column; min-width: 100px; }
+
+        label { font-family: var(--mono); font-size: 0.64rem; font-weight: 500; color: var(--text-muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em; }
+        input, select {
+            padding: 9px 10px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 6px;
+            font-size: 0.85rem; font-family: var(--mono); color: var(--text-main); transition: border-color 0.15s; width: 100%; box-sizing: border-box;
         }
-        input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1); }
-        
-        /* Edit Mode Indicator */
+        input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(234,179,8,0.12); }
+        select option { background: #111; color: #fff; }
+        input[type=checkbox] { width: auto; accent-color: var(--accent); vertical-align: middle; }
+
         .edit-indicator {
-            display: none; background: #fffbeb; border: 1px solid #fcd34d; color: #92400e;
-            padding: 8px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 10px;
+            display: none; background: rgba(234,179,8,0.08); border: 1px solid rgba(234,179,8,0.5); color: var(--accent);
+            padding: 8px 10px; border-radius: 6px; font-family: var(--mono); font-size: 0.72rem; margin-bottom: 12px;
             align-items: center; justify-content: space-between;
         }
 
-        /* Buttons */
-        .btn { padding: 10px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; text-align: center; }
-        .btn-primary { background: var(--primary); color: white; width: 100%; }
-        .btn-primary:hover { opacity: 0.9; }
-        .btn-warning { background: var(--warning); color: white; width: 100%; }
-        .btn-secondary { background: white; border: 1px solid var(--border); color: var(--text-main); width: 100%; }
-        .btn-secondary:hover { background: #f8fafc; }
-        
+        .btn { padding: 10px; border: none; border-radius: 6px; font-family: var(--mono); font-weight: 700; cursor: pointer; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; transition: all 0.15s; text-align: center; }
+        .btn-primary { background: var(--accent); color: #050505; width: 100%; }
+        .btn-primary:hover { background: var(--primary-hover); box-shadow: 0 4px 14px rgba(234,179,8,0.22); }
+        .btn-warning { background: var(--warning); color: #050505; width: 100%; }
+        .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text-main); width: 100%; }
+        .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
         .export-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-        .btn-export { background: white; border: 1px solid var(--border); color: var(--text-muted); font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 5px; }
-        .btn-export:hover { border-color: var(--primary); color: var(--primary); }
+        .btn-export { background: transparent; border: 1px solid var(--border); color: var(--text-muted); font-size: 0.66rem; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .btn-export:hover { border-color: var(--accent); color: var(--accent); background: rgba(234,179,8,0.05); }
 
-        /* Preview Area */
-        .preview-area { flex: 1; padding: 40px; overflow-y: auto; display: flex; justify-content: center; align-items: flex-start; }
-        .paper { background: white; width: 100%; max-width: 900px; min-height: 800px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border-radius: 4px; }
+        .preview-area { flex: 1; padding: 40px; overflow-y: auto; display: flex; justify-content: center; align-items: flex-start; background: var(--bg-body); }
 
-        /* Table */
+        /* The printable quotation keeps its own LIGHT palette (scoped vars) so it
+           prints/exports as a clean white document regardless of the dark chrome. */
+        .paper {
+            background: #ffffff; width: 100%; max-width: 900px; min-height: 800px; padding: 44px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-radius: 6px; color: #1f2937; font-family: var(--sans);
+            --border: #e5e7eb; --text-muted: #6b7280; --primary: #b45309; --text-main: #1f2937;
+        }
+        .paper h1 { font-family: var(--display); font-weight: 900; }
+
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th { text-align: left; padding: 12px 8px; border-bottom: 2px solid var(--border); color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; }
-        td { padding: 12px 8px; border-bottom: 1px solid var(--border); vertical-align: top; font-size: 0.9rem; }
-        tbody tr:hover { background-color: #f8fafc; cursor: pointer; }
-        .numeric { text-align: right; font-family: 'Roboto Mono', monospace; }
+        th { text-align: left; padding: 12px 8px; border-bottom: 2px solid var(--border); color: var(--text-muted); font-family: var(--mono); font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        td { padding: 12px 8px; border-bottom: 1px solid var(--border); vertical-align: top; font-size: 0.88rem; }
+        tbody tr:hover { background-color: #faf7ef; cursor: pointer; }
+        .numeric { text-align: right; font-family: var(--mono); }
         .center { text-align: center; }
-        .provider-link { color: var(--primary); text-decoration: none; font-size: 0.85rem; word-break: break-all; }
-        .note { display: block; font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; font-style: italic; }
-        
+        .provider-link { color: var(--primary); text-decoration: none; font-size: 0.8rem; word-break: break-all; }
+        .note { display: block; font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; font-style: italic; }
+
         .snapshot-mode .delete-col { display: none; }
-        .print-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 2px solid var(--primary); padding-bottom: 20px; }
-        .print-logo { height: 60px; width: auto; }
+        .print-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; border-bottom: 2px solid var(--primary); padding-bottom: 18px; }
+        .print-logo { height: 56px; width: auto; }
+
+        .rates-warn { background: rgba(234,179,8,0.08); border: 1px solid rgba(234,179,8,0.5); color: #fcd34d; font-family: var(--mono); font-size: 0.68rem; line-height: 1.5; padding: 8px 10px; border-radius: 6px; }
+        .paper .print-meta { font-family: var(--mono); font-size: 0.72rem; color: var(--text-muted); margin-top: 8px; line-height: 1.6; }
+        .paper .print-billto { font-size: 0.9rem; color: #1f2937; margin: 0 0 6px; }
+        .paper .print-billto b { font-family: var(--mono); font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); display: block; margin-bottom: 2px; }
+        .paper tfoot td { border-bottom: none; padding: 6px 8px; }
+        .paper tfoot .grand td { border-top: 2px solid var(--primary); font-size: 1.05rem; padding-top: 10px; }
+
+        /* --- Catalog browser modal --- */
+        .cat-modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.72); backdrop-filter: blur(2px); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 40px; }
+        .cat-modal-backdrop.open { display: flex; }
+        .cat-modal { position: relative; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px; width: 100%; max-width: 980px; height: 82vh; max-height: 760px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 24px 70px rgba(0,0,0,0.65); }
+        .cat-head { display: flex; align-items: center; gap: 14px; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+        .cat-head h2 { font-family: var(--display); font-weight: 900; text-transform: uppercase; font-size: 0.95rem; margin: 0; letter-spacing: 0.05em; color: var(--accent); white-space: nowrap; }
+        .cat-search { flex: 1; }
+        .cat-close { background: none; border: none; color: var(--text-muted); font-size: 1.5rem; line-height: 1; cursor: pointer; padding: 0 4px; }
+        .cat-close:hover { color: var(--accent); }
+        .cat-body { display: flex; flex: 1; min-height: 0; }
+        .cat-rail { width: 210px; flex-shrink: 0; border-right: 1px solid var(--border); overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 2px; }
+        .cat-rail button { text-align: left; background: none; border: none; color: var(--text-muted); font-family: var(--mono); font-size: 0.72rem; padding: 8px 10px; border-radius: 6px; cursor: pointer; display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+        .cat-rail button:hover { color: var(--text-main); background: var(--bg-elev); }
+        .cat-rail button.active { background: var(--accent); color: #050505; font-weight: 700; }
+        .cat-rail .count { opacity: 0.7; font-size: 0.66rem; }
+        .cat-grid { flex: 1; overflow-y: auto; padding: 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 12px; align-content: start; }
+        .prod-card { border: 1px solid var(--border); border-radius: 8px; padding: 12px 12px 10px; background: var(--bg-elev); cursor: pointer; display: flex; flex-direction: column; gap: 5px; transition: border-color 0.15s, transform 0.1s; }
+        .prod-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+        .prod-card .pc-prov { font-family: var(--mono); font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        .prod-card .pc-desc { font-weight: 600; font-size: 0.82rem; line-height: 1.3; color: var(--text-main); }
+        .prod-card .pc-note { font-size: 0.7rem; color: var(--text-muted); line-height: 1.35; }
+        .prod-card .pc-foot { margin-top: auto; padding-top: 4px; display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+        .prod-card .pc-price { font-family: var(--mono); font-weight: 700; color: var(--accent); font-size: 0.82rem; }
+        .pc-vat { font-family: var(--mono); font-size: 0.54rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 5px; border-radius: 4px; border: 1px solid var(--border); color: var(--text-muted); white-space: nowrap; }
+        .pc-add { margin-top: 6px; background: transparent; color: var(--accent); border: 1px solid var(--border); border-radius: 5px; font-family: var(--mono); font-weight: 700; font-size: 0.62rem; padding: 5px 8px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.04em; transition: 0.15s; }
+        .pc-add:hover { background: var(--accent); color: #050505; border-color: var(--accent); }
+        .cat-empty { color: var(--text-muted); font-family: var(--mono); font-size: 0.8rem; padding: 48px; text-align: center; grid-column: 1 / -1; }
+        .cat-toast { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--success); color: #052e13; font-family: var(--mono); font-weight: 700; font-size: 0.72rem; padding: 8px 16px; border-radius: 20px; opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; max-width: 80%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .cat-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        @media (max-width: 640px) {
+            .cat-modal-backdrop { padding: 12px; }
+            .cat-modal { height: 90vh; }
+            .cat-rail { width: 130px; }
+        }
 
         @media (max-width: 900px) {
+            body { height: auto; }
             .main-container { flex-direction: column; overflow-y: auto; }
             .sidebar { width: 100%; box-sizing: border-box; }
             .preview-area { padding: 20px; }
-            .form-row { flex-direction: column; } /* Full stack on mobile */
+            .form-row { flex-direction: column; }
         }
     </style>
 </head>
 <body>
 
-    <div class="navbar">
-        <a id="nav-link" href="https://carino.systems" target="_blank" class="brand-link">
-            <img id="nav-logo" class="nav-logo" src="https://carino.systems/assets/images/logo.webp" alt="Logo">
-            <span id="nav-org-name" class="brand-text" data-i18n="appTitle">General Quotation</span>
-        </a>
-        <div class="lang-switch" id="lang-container"></div>
-    </div>
+    <!-- language switch is relocated into the shared Carino navbar -->
+    <div id="lang-container" data-carino-actions class="lang-switch"></div>
 
     <div class="main-container">
         <aside class="sidebar">
@@ -156,9 +189,29 @@
                 </div>
             </div>
 
+            <div id="rates-warn" class="rates-warn" style="display:none;"></div>
+
+            <div>
+                <div class="section-title" data-i18n="quoteDetailsTitle">Quotation</div>
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label data-i18n="clientLabel">Bill To (Client)</label>
+                    <input type="text" id="q-client" translate="no">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="quoteNoLabel">Quote #</label>
+                        <input type="text" id="q-number">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="validUntilLabel">Valid Until</label>
+                        <input type="date" id="q-valid">
+                    </div>
+                </div>
+            </div>
+
             <div>
                 <div class="section-title" data-i18n="addItemTitle">Item Details</div>
-                
+
                 <div id="edit-indicator" class="edit-indicator">
                     <span data-i18n="editingMode">Editing Item...</span>
                     <button onclick="cancelEdit()" style="background:none;border:none;cursor:pointer;">✖</button>
@@ -166,9 +219,7 @@
 
                 <div class="form-group" style="margin-bottom: 12px;">
                     <label data-i18n="catalogLabel">Catalog</label>
-                    <select id="catalog-select">
-                        <option value="" data-i18n="customItem">-- Custom Item --</option>
-                    </select>
+                    <button type="button" class="btn btn-primary" onclick="openCatalog()" style="display:flex;align-items:center;justify-content:center;gap:6px;">&#8862; <span data-i18n="browseCatalog">Browse Catalog</span></button>
                 </div>
 
                 <div class="form-group" style="margin-bottom: 12px;">
@@ -227,7 +278,7 @@
                     <button class="btn btn-export" onclick="sendEmail()"><span>📧</span> <span data-i18n="btnEmail">Email</span></button>
                 </div>
             </div>
-            
+
             <div class="dropzone" id="config-dropzone">
                 <input type="file" id="config-input" accept=".json" hidden>
                 <strong id="dz-title" data-i18n="dropzoneTitle">Load Config</strong>
@@ -237,14 +288,18 @@
         </aside>
 
         <main class="preview-area">
-            <div id="paper" class="paper">
+            <div id="paper" class="paper" translate="no">
                 <div class="print-header">
                     <div>
-                        <h1 id="print-org-name" style="margin:0; color:var(--primary); font-size: 1.8rem;">General Quotation</h1>
+                        <h1 id="print-org-name" style="margin:0; color:var(--primary); font-size: 1.9rem;">General Quotation</h1>
                         <p id="print-date" style="margin:5px 0 0 0; color: var(--text-muted); font-size: 0.9rem;"></p>
                     </div>
-                    <img id="print-logo" class="print-logo" style="display:none;" alt="Logo">
+                    <div style="text-align:right;">
+                        <img id="print-logo" class="print-logo" style="display:none;" alt="Logo">
+                        <div id="print-meta" class="print-meta"></div>
+                    </div>
                 </div>
+                <div id="print-billto" class="print-billto"></div>
 
                 <table id="quoteTable">
                     <thead>
@@ -264,18 +319,35 @@
         </main>
     </div>
 
+    <!-- Catalog browser: category rail + searchable product cards. Business
+         data, so translate="no" keeps browser auto-translate from mangling it. -->
+    <div id="cat-modal" class="cat-modal-backdrop" translate="no" onclick="if(event.target===this) closeCatalog()">
+        <div class="cat-modal" role="dialog" aria-modal="true">
+            <div class="cat-head">
+                <h2 data-i18n="browseCatalog">Browse Catalog</h2>
+                <input type="text" id="cat-search" class="cat-search" oninput="catState.q=this.value; renderCatalog();" autocomplete="off">
+                <button class="cat-close" onclick="closeCatalog()" aria-label="Close">&times;</button>
+            </div>
+            <div class="cat-body">
+                <nav id="cat-rail" class="cat-rail"></nav>
+                <div id="cat-grid" class="cat-grid"></div>
+            </div>
+            <div id="cat-toast" class="cat-toast"></div>
+        </div>
+    </div>
+
 <script>
         // --- 1. DEFAULT EMBEDDED CONFIGURATION ---
         // This acts as your "hardcoded" JSON file.
         const DEFAULT_CONFIG = {
             "organization": {
                 "name": "Carino Systems",
-                "logo": "https://carino.systems/logo.webp",
+                "logo": "logo.webp",
                 "url": "https://carino.systems"
             },
             "theme": {
-                "primary": "#0078d4",
-                "background": "#f0f0f0"
+                "primary": "#eab308",
+                "background": "#050505"
             },
             "settings": {
                 "defaults": {
@@ -292,6 +364,7 @@
             "catalog": [
             // --- CONSULTING & SUPPORT ---
             {
+                "category": "Consulting & Support",
                 "description": "General IT Consulting (Hourly)",
                 "provider": "Carino Systems",
                 "price": 5.00,
@@ -300,6 +373,7 @@
                 "vatStripped": true
             },
             {
+                "category": "Consulting & Support",
                 "description": "Emergency/After-Hours Support",
                 "provider": "Carino Systems",
                 "price": 35.00,
@@ -308,6 +382,7 @@
                 "vatStripped": true
             },
             {
+                "category": "Consulting & Support",
                 "description": "Remote Server Health Check",
                 "provider": "Carino Systems",
                 "price": 5.00,
@@ -315,9 +390,10 @@
                 "note": "Log analysis, uptime check, and security patch review. This adds up to general consulting.",
                 "vatStripped": true
             },
-        
+
             // --- LICENSING ---
             {
+                "category": "Licensing",
                 "description": "RHEL Server - Standard Subscription (1yr)",
                 "provider": "Red Hat",
                 "link": "https://www.redhat.com/en/store/linux-platforms",
@@ -327,6 +403,7 @@
                 "vatStripped": false
             },
             {
+                "category": "Licensing",
                 "description": "Windows Server 2022 Standard (16 Core)",
                 "provider": "Microsoft",
                 "price": 800.00,
@@ -334,9 +411,19 @@
                 "note": "Base License pack",
                 "vatStripped": false
             },
-        
+            {
+                "category": "Licensing",
+                "description": "OS License: Windows 11 Pro",
+                "provider": "Microsoft",
+                "price": 140.00,
+                "currency": "USD",
+                "note": "License through Microsoft",
+                "vatStripped": true
+            },
+
             // --- OS INSTALLATION / FORMATTING (Desktop) ---
             {
+                "category": "OS Installation",
                 "description": "OS Install: Windows 11 Pro (unlicensed)",
                 "provider": "Microsoft",
                 "price": 25.00,
@@ -345,14 +432,7 @@
                 "vatStripped": true
             },
             {
-                "description": "OS License: Windows 11 Pro",
-                "provider": "Microsoft",
-                "price": 140.00,
-                "currency": "USD",
-                "note": "License through Microsoft",
-                "vatStripped": true
-            },
-            {
+                "category": "OS Installation",
                 "description": "OS Install: Fedora Workstation (base install)",
                 "provider": "Fedora Project",
                 "link": "https://fedoraproject.org/",
@@ -362,6 +442,7 @@
                 "vatStripped": false
             },
             {
+                "category": "OS Installation",
                 "description": "OS Install: Fedora Workstation (with custom configuration)",
                 "provider": "Fedora Project",
                 "link": "https://fedoraproject.org/",
@@ -371,6 +452,7 @@
                 "vatStripped": false
             },
             {
+                "category": "OS Installation",
                 "description": "OS Install: openSUSE Tumbleweed",
                 "provider": "openSUSE",
                 "link": "https://get.opensuse.org/tumbleweed/",
@@ -380,6 +462,7 @@
                 "vatStripped": false
             },
             {
+                "category": "OS Installation",
                 "description": "OS Install: Debian Stable",
                 "provider": "Debian",
                 "price": 50.00,
@@ -388,6 +471,7 @@
                 "vatStripped": false
             },
             {
+                "category": "OS Installation",
                 "description": "Advanced Install: Arch Linux",
                 "provider": "Arch Linux",
                 "link": "https://archlinux.org/",
@@ -397,6 +481,7 @@
                 "vatStripped": false
             },
             {
+                "category": "OS Installation",
                 "description": "Expert Build: Gentoo Linux",
                 "provider": "Gentoo Foundation",
                 "link": "https://www.gentoo.org/",
@@ -405,9 +490,10 @@
                 "note": "Kernel compilation & USE flag optimization (24-48h turnaround)",
                 "vatStripped": false
             },
-        
+
             // --- ENTERPRISE LINUX DEPLOYMENT ---
             {
+                "category": "Enterprise Linux",
                 "description": "Server Provisioning: AlmaLinux 9",
                 "provider": "AlmaLinux",
                 "price": 100.00,
@@ -416,11 +502,386 @@
                 "vatStripped": true
             },
             {
+                "category": "Enterprise Linux",
                 "description": "Server Provisioning: Rocky Linux 9",
                 "provider": "Rocky Enterprise",
                 "price": 100.00,
                 "currency": "USD",
                 "note": "Community Enterprise OS setup",
+                "vatStripped": true
+            },
+
+            // --- IT SERVICES ---
+            {
+                "category": "IT Services",
+                "description": "Network Setup & Configuration (SOHO)",
+                "provider": "Carino Systems",
+                "price": 40.00,
+                "currency": "USD",
+                "note": "Router, VLANs, Wi-Fi coverage, firewall rules",
+                "vatStripped": true
+            },
+            {
+                "category": "IT Services",
+                "description": "Backup Solution Setup (3-2-1)",
+                "provider": "Carino Systems",
+                "price": 50.00,
+                "currency": "USD",
+                "note": "Automated jobs, offsite replication, restore test",
+                "vatStripped": true
+            },
+            {
+                "category": "IT Services",
+                "description": "NAS Deployment (TrueNAS / Synology)",
+                "provider": "Carino Systems",
+                "price": 80.00,
+                "currency": "USD",
+                "note": "Pool/RAID config, shares, snapshots, user access",
+                "vatStripped": true
+            },
+            {
+                "category": "IT Services",
+                "description": "Homelab Build & Provisioning",
+                "provider": "Carino Systems",
+                "price": 120.00,
+                "currency": "USD",
+                "note": "Hypervisor, VMs/containers, storage, networking",
+                "vatStripped": true
+            },
+            {
+                "category": "IT Services",
+                "description": "Virtualization Host Setup (Proxmox VE)",
+                "provider": "Carino Systems",
+                "price": 90.00,
+                "currency": "USD",
+                "note": "Cluster-ready node, ZFS, bridges/VLANs",
+                "vatStripped": true
+            },
+            {
+                "category": "IT Services",
+                "description": "Firewall Hardening (pfSense / OPNsense)",
+                "provider": "Carino Systems",
+                "price": 70.00,
+                "currency": "USD",
+                "note": "Rule review, VPN, IDS/IPS baseline",
+                "vatStripped": true
+            },
+            {
+                "category": "IT Services",
+                "description": "Hardware Diagnostics & Repair (labor)",
+                "provider": "Carino Systems",
+                "price": 20.00,
+                "currency": "USD",
+                "note": "Component testing, thermals, part replacement",
+                "vatStripped": true
+            },
+            {
+                "category": "IT Services",
+                "description": "Logical Data Recovery Attempt",
+                "provider": "Carino Systems",
+                "price": 60.00,
+                "currency": "USD",
+                "note": "Filesystem/partition recovery — no data guarantee",
+                "vatStripped": true
+            },
+            {
+                "category": "IT Services",
+                "description": "Malware Removal & Cleanup",
+                "provider": "Carino Systems",
+                "price": 30.00,
+                "currency": "USD",
+                "note": "Scan, removal, hardening, patching",
+                "vatStripped": true
+            },
+
+            // --- CLOUD & INFRASTRUCTURE ---
+            {
+                "category": "Cloud & Infrastructure",
+                "description": "VPS Provisioning & Hardening",
+                "provider": "Carino Systems",
+                "price": 40.00,
+                "currency": "USD",
+                "note": "Fresh cloud VM, SSH keys, UFW, fail2ban",
+                "vatStripped": true
+            },
+            {
+                "category": "Cloud & Infrastructure",
+                "description": "Docker / Container Deployment",
+                "provider": "Carino Systems",
+                "price": 50.00,
+                "currency": "USD",
+                "note": "Compose stack, volumes, restart policies",
+                "vatStripped": true
+            },
+            {
+                "category": "Cloud & Infrastructure",
+                "description": "Reverse Proxy + TLS (Nginx / Caddy)",
+                "provider": "Carino Systems",
+                "price": 35.00,
+                "currency": "USD",
+                "note": "Domains, Let's Encrypt, HTTP/2",
+                "vatStripped": true
+            },
+            {
+                "category": "Cloud & Infrastructure",
+                "description": "CI/CD Pipeline Setup (GitHub Actions)",
+                "provider": "Carino Systems",
+                "price": 80.00,
+                "currency": "USD",
+                "note": "Automated build, test and deploy workflow",
+                "vatStripped": true
+            },
+            {
+                "category": "Cloud & Infrastructure",
+                "description": "Monitoring Stack (Prometheus / Grafana)",
+                "provider": "Carino Systems",
+                "price": 90.00,
+                "currency": "USD",
+                "note": "Metrics, dashboards, alert rules",
+                "vatStripped": true
+            },
+            {
+                "category": "Cloud & Infrastructure",
+                "description": "Self-Hosted App Deployment",
+                "provider": "Carino Systems",
+                "price": 45.00,
+                "currency": "USD",
+                "note": "Nextcloud / Vaultwarden / etc. install & config",
+                "vatStripped": true
+            },
+
+            // --- WEB DEVELOPMENT ---
+            {
+                "category": "Web Development",
+                "description": "Static Website (single page)",
+                "provider": "Carino Systems",
+                "price": 150.00,
+                "currency": "USD",
+                "note": "Responsive, brand-styled, deployed",
+                "vatStripped": false
+            },
+            {
+                "category": "Web Development",
+                "description": "Multi-Page Website (up to 6 pages)",
+                "provider": "Carino Systems",
+                "price": 400.00,
+                "currency": "USD",
+                "note": "Contact form, SEO basics, deployment",
+                "vatStripped": false
+            },
+            {
+                "category": "Web Development",
+                "description": "Custom Web App / Tool",
+                "provider": "Carino Systems",
+                "price": 600.00,
+                "currency": "USD",
+                "note": "Interactive client-side application, per scope",
+                "vatStripped": false
+            },
+            {
+                "category": "Web Development",
+                "description": "GitHub Pages Deployment + Domain",
+                "provider": "Carino Systems",
+                "link": "https://pages.github.com/",
+                "price": 25.00,
+                "currency": "USD",
+                "note": "Repo setup, CNAME, DNS records, HTTPS",
+                "vatStripped": true
+            },
+            {
+                "category": "Web Development",
+                "description": "DNS / Domain Configuration",
+                "provider": "Carino Systems",
+                "price": 15.00,
+                "currency": "USD",
+                "note": "A/CNAME/MX records, subdomains, mail",
+                "vatStripped": true
+            },
+            {
+                "category": "Web Development",
+                "description": "Carino Design System Integration",
+                "provider": "Carino Systems",
+                "link": "https://branding.carino.systems",
+                "price": 60.00,
+                "currency": "USD",
+                "note": "Apply Carino Branding tokens + navbar to a project",
+                "vatStripped": true
+            },
+            {
+                "category": "Web Development",
+                "description": "Website Maintenance (monthly)",
+                "provider": "Carino Systems",
+                "price": 20.00,
+                "currency": "USD",
+                "note": "Updates, backups, uptime & link checks",
+                "vatStripped": true
+            },
+
+            // --- DICOM & MEDICAL IMAGING ---
+            {
+                "category": "DICOM & Medical Imaging",
+                "description": "PACS Deployment (store-only receiver)",
+                "provider": "Carino Systems",
+                "price": 200.00,
+                "currency": "USD",
+                "note": "Cross-platform receive + folder auto-forward node",
+                "vatStripped": false
+            },
+            {
+                "category": "DICOM & Medical Imaging",
+                "description": "DICOM Node Configuration",
+                "provider": "Carino Systems",
+                "price": 50.00,
+                "currency": "USD",
+                "note": "AE title, port, associations, C-STORE verification",
+                "vatStripped": true
+            },
+            {
+                "category": "DICOM & Medical Imaging",
+                "description": "DICOM Auto-Forward / Routing Rules",
+                "provider": "Carino Systems",
+                "price": 60.00,
+                "currency": "USD",
+                "note": "Folder-watch capture forwarded to destinations",
+                "vatStripped": true
+            },
+            {
+                "category": "DICOM & Medical Imaging",
+                "description": "DICOM Anonymization / De-identification",
+                "provider": "Carino Systems",
+                "price": 40.00,
+                "currency": "USD",
+                "note": "Batch tag scrubbing per de-id policy",
+                "vatStripped": true
+            },
+            {
+                "category": "DICOM & Medical Imaging",
+                "description": "Modality Worklist (MWL) Setup",
+                "provider": "Carino Systems",
+                "price": 80.00,
+                "currency": "USD",
+                "note": "Worklist SCP integration with RIS/HIS",
+                "vatStripped": false
+            },
+            {
+                "category": "DICOM & Medical Imaging",
+                "description": "DICOM Viewer Deployment",
+                "provider": "Carino Systems",
+                "price": 70.00,
+                "currency": "USD",
+                "note": "Web/desktop viewer install, layout & hanging protocols",
+                "vatStripped": false
+            },
+            {
+                "category": "DICOM & Medical Imaging",
+                "description": "DICOM Tag Editing / Batch Correction",
+                "provider": "Carino Systems",
+                "price": 35.00,
+                "currency": "USD",
+                "note": "Bulk study/series metadata fixes",
+                "vatStripped": true
+            },
+            {
+                "category": "DICOM & Medical Imaging",
+                "description": "Study Migration (PACS to PACS)",
+                "provider": "Carino Systems",
+                "price": 120.00,
+                "currency": "USD",
+                "note": "Bulk C-MOVE/export with integrity check",
+                "vatStripped": true
+            },
+            {
+                "category": "DICOM & Medical Imaging",
+                "description": "Imaging Workstation Setup",
+                "provider": "Carino Systems",
+                "price": 90.00,
+                "currency": "USD",
+                "note": "Display calibration, viewer, DICOM connectivity",
+                "vatStripped": false
+            },
+
+            // --- MEDIA & CONTENT ---
+            {
+                "category": "Media & Content",
+                "description": "OCR / Document Digitization",
+                "provider": "Carino Systems",
+                "price": 10.00,
+                "currency": "USD",
+                "note": "Scanned documents to searchable text",
+                "vatStripped": true
+            },
+            {
+                "category": "Media & Content",
+                "description": "PDF / Image Batch Conversion",
+                "provider": "Carino Systems",
+                "price": 8.00,
+                "currency": "USD",
+                "note": "Bulk PDF-to-image (and back), optimized",
+                "vatStripped": true
+            },
+            {
+                "category": "Media & Content",
+                "description": "Subtitle Sync & Correction",
+                "provider": "Carino Systems",
+                "price": 15.00,
+                "currency": "USD",
+                "note": "Re-time and align subtitle tracks",
+                "vatStripped": true
+            },
+            {
+                "category": "Media & Content",
+                "description": "Video Transcoding / Format Conversion",
+                "provider": "Carino Systems",
+                "price": 12.00,
+                "currency": "USD",
+                "note": "Codec/container conversion, per file",
+                "vatStripped": true
+            },
+            {
+                "category": "Media & Content",
+                "description": "Multi-Stream Monitoring Wall Setup",
+                "provider": "Carino Systems",
+                "price": 40.00,
+                "currency": "USD",
+                "note": "Multiviewer grid for live streams",
+                "vatStripped": true
+            },
+            {
+                "category": "Media & Content",
+                "description": "Teleprompter Setup for Recording",
+                "provider": "Carino Systems",
+                "price": 10.00,
+                "currency": "USD",
+                "note": "Browser teleprompter configured for a shoot",
+                "vatStripped": true
+            },
+
+            // --- DATA & PRODUCTIVITY ---
+            {
+                "category": "Data & Productivity",
+                "description": "Spreadsheet Comparison / Reconciliation",
+                "provider": "Carino Systems",
+                "price": 20.00,
+                "currency": "USD",
+                "note": "Diff and reconcile two datasets",
+                "vatStripped": true
+            },
+            {
+                "category": "Data & Productivity",
+                "description": "Data Cleanup & Normalization",
+                "provider": "Carino Systems",
+                "price": 30.00,
+                "currency": "USD",
+                "note": "Dedup, reformat, validate a dataset",
+                "vatStripped": true
+            },
+            {
+                "category": "Data & Productivity",
+                "description": "Branded Document / Quotation Template",
+                "provider": "Carino Systems",
+                "price": 25.00,
+                "currency": "USD",
+                "note": "Reusable Carino-styled report template",
                 "vatStripped": true
             }
         ]
@@ -433,19 +894,22 @@
         let appState = {
             config: {
                 orgName: "General Quotation",
-                logo: "https://carino.systems/logo.webp",
+                logo: "logo.webp",
                 url: "https://carino.systems",
                 targetCurrency: "USD",
                 vatRate: 16
             },
-            theme: { primary: "#2563eb", background: "#f1f5f9" },
+            theme: { primary: "#eab308", background: "#050505" },
             availableLanguages: DEFAULT_LANGUAGES,
             availableCurrencies: DEFAULT_CURRENCIES,
             customDictionary: {},
             catalog: [],
             items: [],
             rates: {},
-            editingId: null
+            ratesOk: true,
+            ratesDate: null,
+            editingId: null,
+            meta: { client: "", quoteNo: "", validUntil: "" }
         };
 
         // --- 3. INIT FLOW ---
@@ -461,6 +925,9 @@
             setupUI();
             await fetchRates();
             renderTable();
+
+            // Close the catalog browser on Escape.
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeCatalog(); });
         });
 
         // --- 4. CORE FUNCTIONS ---
@@ -473,7 +940,7 @@
                 appState.config.url = json.organization.url || "https://carino.systems";
             }
             if(json.theme) appState.theme = json.theme;
-            
+
             if(json.settings) {
                 if(json.settings.currencies) appState.availableCurrencies = json.settings.currencies;
                 if(json.settings.languages) appState.availableLanguages = json.settings.languages;
@@ -482,11 +949,11 @@
                     // We don't set language here immediately, handled in initI18n
                 }
             }
-            
+
             if(json.dictionary) {
                 appState.customDictionary = json.dictionary;
             }
-            
+
             if(json.catalog) appState.catalog = json.catalog;
         }
 
@@ -502,11 +969,15 @@
                 if(parsed.availableCurrencies) appState.availableCurrencies = parsed.availableCurrencies;
                 if(parsed.customDictionary) appState.customDictionary = parsed.customDictionary;
                 if(parsed.catalog && parsed.catalog.length > 0) appState.catalog = parsed.catalog;
+                if(parsed.meta) appState.meta = { ...appState.meta, ...parsed.meta };
             }
         }
 
         function saveState() {
-            localStorage.setItem('quoteConfig', JSON.stringify(appState));
+            // Persist a lean subset (skip transient rates / logo data-URI / editing flag).
+            const { rates, ratesOk, ratesDate, editingId, config, ...rest } = appState;
+            const { logoData, logoAspect, ...cfg } = config;
+            localStorage.setItem('quoteConfig', JSON.stringify({ ...rest, config: cfg }));
         }
 
         function setupUI() {
@@ -514,18 +985,13 @@
             document.documentElement.style.setProperty('--primary', appState.theme.primary);
             document.documentElement.style.setProperty('--bg-body', appState.theme.background);
 
-            // Branding
-            const navLink = document.getElementById('nav-link');
-            const navLogo = document.getElementById('nav-logo');
-            
+            // Branding: the top bar is the shared Carino navbar; only the
+            // printable document carries the org name + logo.
             if (appState.config.logo) {
-                navLogo.src = appState.config.logo;
-                document.getElementById('print-logo').src = appState.config.logo;
-                document.getElementById('print-logo').style.display = 'block';
+                const pl = document.getElementById('print-logo');
+                pl.src = appState.config.logo;
+                pl.style.display = 'block';
             }
-            if (appState.config.url) navLink.href = appState.config.url;
-            
-            document.getElementById('nav-org-name').innerText = appState.config.orgName;
             document.getElementById('print-org-name').innerText = appState.config.orgName;
             document.title = `${appState.config.orgName} - Quote`;
 
@@ -557,12 +1023,11 @@
                 });
                 select.value = appState.availableCurrencies.includes(currentVal) ? currentVal : appState.availableCurrencies[0];
             });
-            
+
             document.getElementById('global-vat').value = appState.config.vatRate;
-            renderCatalogDropdown();
-            
+            normalizeCatalog();
+
             // Listeners
-            document.getElementById('catalog-select').onchange = handleCatalogSelect;
             document.getElementById('global-currency').onchange = (e) => {
                 appState.config.targetCurrency = e.target.value;
                 fetchRates().then(renderTable);
@@ -573,12 +1038,24 @@
                 renderTable();
                 saveState();
             };
+
+            // Quotation meta (client / quote # / valid-until)
+            if (!appState.meta) appState.meta = { client: '', quoteNo: '', validUntil: '' };
+            if (!appState.meta.quoteNo) appState.meta.quoteNo = 'Q-' + new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            const qc = document.getElementById('q-client');
+            const qn = document.getElementById('q-number');
+            const qv = document.getElementById('q-valid');
+            if (qc) { qc.value = appState.meta.client || ''; qc.oninput = (e) => { appState.meta.client = e.target.value; saveState(); renderTable(); }; }
+            if (qn) { qn.value = appState.meta.quoteNo || ''; qn.oninput = (e) => { appState.meta.quoteNo = e.target.value; saveState(); renderTable(); }; }
+            if (qv) { qv.value = appState.meta.validUntil || ''; qv.oninput = (e) => { appState.meta.validUntil = e.target.value; saveState(); renderTable(); }; }
+
+            loadLogoData();
         }
 
         function setupDropzone() {
             const dropzone = document.getElementById('config-dropzone');
             const fileInput = document.getElementById('config-input');
-            
+
             // Visual state check
             if(localStorage.getItem('quoteConfig')) {
                 dropzone.classList.add('success');
@@ -597,7 +1074,7 @@
             reader.onload = (event) => {
                 try {
                     const json = JSON.parse(event.target.result);
-                    
+
                     // Use the shared apply function
                     applyConfig(json);
 
@@ -609,14 +1086,14 @@
                     }
 
                     saveState();
-                    setupUI(); 
+                    setupUI();
                     updateText();
-                    
+
                     // Success Feedback
                     const dz = document.getElementById('config-dropzone');
                     dz.classList.add('success');
                     document.getElementById('dz-title').innerText = "Config Loaded";
-                    
+
                 } catch (err) {
                     alert("Invalid JSON file");
                     console.error(err);
@@ -625,30 +1102,122 @@
             reader.readAsText(file);
         }
 
-        // --- CATALOG & ITEMS ---
-        function handleCatalogSelect(e) {
-            const idx = e.target.value;
-            if (idx === "") return;
-            const item = appState.catalog[idx];
-            document.getElementById('description').value = item.description || "";
-            document.getElementById('price').value = item.price || "";
-            document.getElementById('quantity').value = 1;
-            document.getElementById('item-currency').value = item.currency || "USD";
-            document.getElementById('provider').value = item.provider || "";
-            document.getElementById('link').value = item.link || "";
-            document.getElementById('notes').value = item.note || "";
-            document.getElementById('remove-vat').checked = item.vatStripped || false;
+        // --- CATALOG BROWSER ---
+        // catalog entries are flat but carry a `category`; the browser groups by it.
+        let catState = { cat: '__all', q: '' };
+        let _idSeq = 0;
+        function nextId() { return Date.now() * 1000 + ((_idSeq++) % 1000); }
+
+        // Ensure every entry has a category (older/flat configs default to "General").
+        function normalizeCatalog() {
+            appState.catalog = (appState.catalog || []).map(it => ({
+                ...it,
+                category: (it.category && String(it.category).trim()) || 'General'
+            }));
         }
 
-        function renderCatalogDropdown() {
-            const select = document.getElementById('catalog-select');
-            select.innerHTML = `<option value="">-- ${i18next.t('customItem')} --</option>`;
-            appState.catalog.forEach((item, index) => {
-                const opt = document.createElement('option');
-                opt.value = index;
-                opt.innerText = item.description;
-                select.appendChild(opt);
+        function openCatalog() {
+            normalizeCatalog();
+            catState = { cat: '__all', q: '' };
+            const s = document.getElementById('cat-search');
+            s.value = ''; s.placeholder = i18next.t('searchCatalog');
+            renderCatalog();
+            document.getElementById('cat-modal').classList.add('open');
+            s.focus();
+        }
+        function closeCatalog() { document.getElementById('cat-modal').classList.remove('open'); }
+
+        function setCatFilter(c) { catState.cat = c; renderCatalog(); }
+
+        function catCategories() {
+            const map = new Map();
+            appState.catalog.forEach(it => map.set(it.category, (map.get(it.category) || 0) + 1));
+            return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+        }
+
+        function renderCatalog() {
+            // Category rail (with counts). Built via DOM so category names with
+            // spaces/& can't break out of an inline onclick attribute.
+            const rail = document.getElementById('cat-rail');
+            rail.innerHTML = '';
+            const mkRailBtn = (label, count, value) => {
+                const b = document.createElement('button');
+                if (catState.cat === value) b.className = 'active';
+                b.innerHTML = `${escapeHtml(label)} <span class="count">${count}</span>`;
+                b.onclick = () => setCatFilter(value);
+                rail.appendChild(b);
+            };
+            mkRailBtn(i18next.t('allItems'), appState.catalog.length, '__all');
+            catCategories().forEach(([name, count]) => mkRailBtn(name, count, name));
+
+            // Product grid (category filter + free-text search over desc/provider/note)
+            const q = catState.q.trim().toLowerCase();
+            const grid = document.getElementById('cat-grid');
+            const matches = appState.catalog
+                .map((it, i) => ({ it, i }))
+                .filter(({ it }) =>
+                    (catState.cat === '__all' || it.category === catState.cat) &&
+                    (!q || (it.description || '').toLowerCase().includes(q)
+                         || (it.provider || '').toLowerCase().includes(q)
+                         || (it.note || '').toLowerCase().includes(q)));
+
+            if (!matches.length) {
+                grid.innerHTML = `<div class="cat-empty">${i18next.t('noResults')}</div>`;
+                return;
+            }
+            grid.innerHTML = matches.map(({ it, i }) => `
+                <div class="prod-card" onclick="fillFromCatalog(${i})" title="${escapeAttr(i18next.t('prefillHint'))}">
+                    <div class="pc-prov">${escapeHtml(it.provider || '—')}</div>
+                    <div class="pc-desc">${escapeHtml(it.description || '')}</div>
+                    ${it.note ? `<div class="pc-note">${escapeHtml(it.note)}</div>` : ''}
+                    <div class="pc-foot">
+                        <span class="pc-price">${(+it.price || 0).toFixed(2)} ${escapeHtml(it.currency || 'USD')}</span>
+                        ${it.vatStripped ? `<span class="pc-vat">${i18next.t('incVatShort')}</span>` : ''}
+                    </div>
+                    <button class="pc-add" onclick="event.stopPropagation(); quickAddCatalog(${i})">+ ${i18next.t('btnAdd')}</button>
+                </div>`).join('');
+        }
+
+        // Card click: prefill the item form so qty/currency can be tweaked before adding.
+        function fillFromCatalog(idx) {
+            const it = appState.catalog[idx];
+            if (!it) return;
+            document.getElementById('description').value = it.description || '';
+            document.getElementById('price').value = it.price || '';
+            document.getElementById('quantity').value = 1;
+            document.getElementById('item-currency').value = it.currency || appState.config.targetCurrency;
+            document.getElementById('provider').value = it.provider || '';
+            document.getElementById('link').value = it.link || '';
+            document.getElementById('notes').value = it.note || '';
+            document.getElementById('remove-vat').checked = it.vatStripped || false;
+            closeCatalog();
+            document.getElementById('description').focus();
+        }
+
+        // "+" button: add straight to the quote (qty 1) and keep the browser open
+        // so several items can be added in one pass.
+        function quickAddCatalog(idx) {
+            const it = appState.catalog[idx];
+            if (!it) return;
+            appState.items.push({
+                id: nextId(),
+                desc: it.description || '', price: +it.price || 0, qty: 1,
+                currency: it.currency || appState.config.targetCurrency,
+                provider: it.provider || '', link: it.link || '',
+                note: it.note || '', stripVat: it.vatStripped || false
             });
+            saveState();
+            renderTable();
+            catToast('✓ ' + (it.description || i18next.t('btnAdd')));
+        }
+
+        function catToast(msg) {
+            const t = document.getElementById('cat-toast');
+            if (!t) return;
+            t.textContent = msg;
+            t.classList.add('show');
+            clearTimeout(t._to);
+            t._to = setTimeout(() => t.classList.remove('show'), 1300);
         }
 
         function handleUpsert() {
@@ -656,7 +1225,7 @@
             const price = parseFloat(document.getElementById('price').value);
             const qty = parseFloat(document.getElementById('quantity').value) || 1;
 
-            if (!desc || isNaN(price)) return alert(i18next.t('validationError'));
+            if (!desc || isNaN(price) || price <= 0) return alert(i18next.t('validationError'));
 
             const itemData = {
                 id: appState.editingId || Date.now(),
@@ -721,7 +1290,6 @@
         }
 
         function clearForm() {
-            document.getElementById('catalog-select').value = "";
             document.getElementById('description').value = "";
             document.getElementById('price').value = "";
             document.getElementById('quantity').value = 1;
@@ -741,11 +1309,68 @@
         // --- MATH & RENDER ---
         async function fetchRates() {
             const base = appState.config.targetCurrency;
+            const CACHE_KEY = 'quoteRates';
+            // Serve a fresh cache (< 12h, same base) without hitting the network.
             try {
-                const res = await fetch(`https://api.exchangerate-api.com/v4/latest/${base}`);
-                const data = await res.json();
-                appState.rates = data.rates;
+                const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+                if (c && c.base === base && (Date.now() - c.ts) < 12 * 3600 * 1000) {
+                    appState.rates = c.rates; appState.ratesOk = true; appState.ratesDate = c.date || null;
+                    renderRatesWarning(); return;
+                }
             } catch (e) {}
+            try {
+                // Frankfurter: free, CORS-open, ECB reference rates. rates[X] = X per 1 base.
+                const res = await fetch(`https://api.frankfurter.app/latest?from=${encodeURIComponent(base)}`);
+                if (!res.ok) throw new Error('rate http ' + res.status);
+                const data = await res.json();
+                appState.rates = data.rates || {};
+                appState.rates[base] = 1;
+                appState.ratesOk = true;
+                appState.ratesDate = data.date || null;
+                localStorage.setItem(CACHE_KEY, JSON.stringify({ base, rates: appState.rates, date: data.date, ts: Date.now() }));
+            } catch (e) {
+                let cached = null;
+                try { cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); } catch (_) {}
+                if (cached && cached.base === base) { appState.rates = cached.rates; appState.ratesDate = cached.date; appState.ratesOk = true; }
+                else { appState.rates = {}; appState.ratesOk = false; }
+            }
+            renderRatesWarning();
+        }
+
+        function renderRatesWarning() {
+            const el = document.getElementById('rates-warn');
+            if (!el) return;
+            const target = appState.config.targetCurrency;
+            const mixed = appState.items.some(i => i.currency !== target);
+            if (!appState.ratesOk && mixed) {
+                el.style.display = 'block';
+                el.innerText = '\u26A0 ' + i18next.t('ratesWarn');
+            } else {
+                el.style.display = 'none';
+            }
+        }
+
+        function escapeHtml(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+        function escapeAttr(s) { return escapeHtml(s); }
+
+        // Preload the logo into a PNG data URI so it shows up in PDF/image exports.
+        function loadLogoData() {
+            const src = appState.config.logo;
+            if (!src) return;
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+                    canvas.getContext('2d').drawImage(img, 0, 0);
+                    appState.config.logoData = canvas.toDataURL('image/png');
+                    appState.config.logoAspect = (img.naturalHeight / img.naturalWidth) || 1;
+                } catch (e) { /* cross-origin without CORS \u2192 skip embedding */ }
+            };
+            img.src = src;
         }
 
         function getRate(from, to) {
@@ -758,33 +1383,35 @@
             const tbody = document.querySelector('#quoteTable tbody');
             const tfoot = document.querySelector('#quoteTable tfoot');
             tbody.innerHTML = '';
-            
+
             const targetCurr = appState.config.targetCurrency;
-            const vatPct = appState.config.vatRate;
-            let total = 0;
+            const vatPct = appState.config.vatRate || 0;
+            let subtotal = 0;
 
             appState.items.forEach(item => {
                 const qty = item.qty || 1;
                 const rate = getRate(item.currency, targetCurr);
-                let base = item.stripVat ? item.price / (1 + (vatPct/100)) : item.price;
-                const unitConverted = base * rate;
-                const final = (unitConverted * qty) * (1 + (vatPct/100));
-                total += final;
+                const netUnitSrc = item.stripVat ? item.price / (1 + (vatPct/100)) : item.price;  // normalise to ex-VAT
+                const netUnit = netUnitSrc * rate;                                                 // in target currency
+                const lineNet = netUnit * qty;
+                subtotal += lineNet;
+
+                const showOrig = (item.currency !== targetCurr) || item.stripVat;
+                const origNote = showOrig
+                    ? `<div style="font-size:0.72em;color:#9ca3af;">${item.price.toFixed(2)} ${escapeHtml(item.currency)}${item.stripVat ? ' ' + i18next.t('incVatShort') : ''}</div>`
+                    : '';
 
                 const tr = document.createElement('tr');
                 tr.onclick = () => loadItemForEdit(item.id);
                 tr.innerHTML = `
                     <td class="center" style="font-weight:600;">${qty}</td>
-                    <td><strong>${item.desc}</strong>${item.note ? `<span class="note">${item.note}</span>` : ''}</td>
+                    <td><strong>${escapeHtml(item.desc)}</strong>${item.note ? `<span class="note">${escapeHtml(item.note)}</span>` : ''}</td>
                     <td>
-                        <div>${item.provider || '-'}</div>
-                        ${item.link ? `<a href="${item.link}" target="_blank" class="provider-link" onclick="event.stopPropagation()">Link ↗</a>` : ''}
+                        <div>${escapeHtml(item.provider || '-')}</div>
+                        ${item.link ? `<a href="${escapeAttr(item.link)}" target="_blank" rel="noopener" class="provider-link" onclick="event.stopPropagation()">Link ↗</a>` : ''}
                     </td>
-                    <td class="numeric">
-                        ${item.price.toFixed(2)} ${item.currency}
-                        <div style="font-size:0.75em; color:#999;">~ ${unitConverted.toFixed(2)} ${targetCurr}</div>
-                    </td>
-                    <td class="numeric"><strong>${final.toFixed(2)} ${targetCurr}</strong></td>
+                    <td class="numeric">${netUnit.toFixed(2)} ${targetCurr}${origNote}</td>
+                    <td class="numeric"><strong>${lineNet.toFixed(2)} ${targetCurr}</strong></td>
                     <td class="delete-col">
                         <button onclick="deleteItem(${item.id}, event)" style="color:var(--danger); background:none; border:none; cursor:pointer; font-size:1.2em;">&times;</button>
                     </td>
@@ -792,27 +1419,41 @@
                 tbody.appendChild(tr);
             });
 
+            const vatAmount = subtotal * (vatPct/100);
+            const total = subtotal + vatAmount;
             tfoot.innerHTML = `
-                <tr style="background:#f8fafc; font-weight:bold; border-top:2px solid var(--border);">
-                    <td colspan="4" style="text-align:right;">${i18next.t('totalIncVat')}</td>
-                    <td class="numeric" style="font-size:1.1em; color:var(--primary);">${total.toFixed(2)} ${targetCurr}</td>
-                    <td></td>
-                </tr>
+                <tr class="sub"><td colspan="4" style="text-align:right; color:var(--text-muted);">${i18next.t('subtotal')}</td>
+                    <td class="numeric">${subtotal.toFixed(2)} ${targetCurr}</td><td></td></tr>
+                <tr><td colspan="4" style="text-align:right; color:var(--text-muted);">${i18next.t('vatAmount')} (${vatPct}%)</td>
+                    <td class="numeric">${vatAmount.toFixed(2)} ${targetCurr}</td><td></td></tr>
+                <tr class="grand" style="font-weight:bold;"><td colspan="4" style="text-align:right;">${i18next.t('totalIncVat')}</td>
+                    <td class="numeric" style="color:var(--primary);">${total.toFixed(2)} ${targetCurr}</td><td></td></tr>
             `;
 
-            document.getElementById('print-date').innerText = new Date().toLocaleDateString();
+            document.getElementById('print-date').innerText = `${i18next.t('dateLabel')}: ${new Date().toLocaleDateString()}`;
+            const meta = appState.meta || {};
+            const metaLines = [];
+            if (meta.quoteNo) metaLines.push(`${i18next.t('quoteNoLabel')}: ${escapeHtml(meta.quoteNo)}`);
+            if (meta.validUntil) metaLines.push(`${i18next.t('validUntilLabel')}: ${escapeHtml(meta.validUntil)}`);
+            const pm = document.getElementById('print-meta'); if (pm) pm.innerHTML = metaLines.join('<br>');
+            const bt = document.getElementById('print-billto'); if (bt) bt.innerHTML = meta.client ? `<b>${i18next.t('billTo')}</b>${escapeHtml(meta.client)}` : '';
+
+            renderRatesWarning();
         }
 
         // --- EXPORTS ---
         function exportXLSX() {
             const targetCurr = appState.config.targetCurrency;
             const vatPct = appState.config.vatRate;
-            
+
+            let subtotal = 0;
             const data = appState.items.map(i => {
                 const qty = i.qty || 1;
                 const rate = getRate(i.currency, targetCurr);
-                let base = i.stripVat ? i.price / (1 + (vatPct/100)) : i.price;
-                const final = (base * rate * qty) * (1 + (vatPct/100));
+                const netUnitSrc = i.stripVat ? i.price / (1 + (vatPct/100)) : i.price;
+                const netUnit = netUnitSrc * rate;
+                const lineNet = netUnit * qty;
+                subtotal += lineNet;
                 return {
                     [i18next.t('thQty')]: qty,
                     [i18next.t('thDesc')]: i.desc,
@@ -820,9 +1461,16 @@
                     "URL": i.link,
                     [i18next.t('priceLabel')]: i.price,
                     [i18next.t('currencyLabel')]: i.currency,
-                    [`${i18next.t('thTotal')} (${targetCurr})`]: final
+                    [`${i18next.t('thUnit')} (${targetCurr})`]: +netUnit.toFixed(2),
+                    [`${i18next.t('thTotal')} (${targetCurr})`]: +lineNet.toFixed(2)
                 };
             });
+            const vatAmount = subtotal * (vatPct/100);
+            data.push({},
+                { [i18next.t('thDesc')]: i18next.t('subtotal'), [`${i18next.t('thTotal')} (${targetCurr})`]: +subtotal.toFixed(2) },
+                { [i18next.t('thDesc')]: `${i18next.t('vatAmount')} (${vatPct}%)`, [`${i18next.t('thTotal')} (${targetCurr})`]: +vatAmount.toFixed(2) },
+                { [i18next.t('thDesc')]: i18next.t('totalIncVat'), [`${i18next.t('thTotal')} (${targetCurr})`]: +(subtotal + vatAmount).toFixed(2) }
+            );
             const ws = XLSX.utils.json_to_sheet(data);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Quote");
@@ -844,7 +1492,7 @@
         async function exportPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            
+
             let fontUsed = "helvetica";
             try {
                 // Noto Sans JP TTF (High reliability)
@@ -859,30 +1507,47 @@
 
             const targetCurr = appState.config.targetCurrency;
             const vatPct = appState.config.vatRate;
-            
+
             doc.setFont(fontUsed);
+            const meta = appState.meta || {};
             doc.setFontSize(16);
             doc.text(appState.config.orgName, 14, 20);
             doc.setFontSize(10);
-            doc.text(`Date: ${new Date().toLocaleDateString()}`, 14, 28);
-            
-            if (appState.config.logo && appState.config.logo.startsWith('data:image')) {
-                try { doc.addImage(appState.config.logo, 'PNG', 160, 10, 30, 0); } catch(e){}
+            let hy = 28;
+            doc.text(`${i18next.t('dateLabel')}: ${new Date().toLocaleDateString()}`, 14, hy);
+            if (meta.quoteNo)    { hy += 6; doc.text(`${i18next.t('quoteNoLabel')}: ${meta.quoteNo}`, 14, hy); }
+            if (meta.validUntil) { hy += 6; doc.text(`${i18next.t('validUntilLabel')}: ${meta.validUntil}`, 14, hy); }
+            if (meta.client)     { hy += 6; doc.text(`${i18next.t('billTo')}: ${meta.client}`, 14, hy); }
+
+            if (appState.config.logoData) {
+                try { doc.addImage(appState.config.logoData, 'PNG', 168, 12, 26, 26 * (appState.config.logoAspect || 1)); } catch(e){}
             }
 
+            let subtotal = 0;
             const body = appState.items.map(i => {
                 const qty = i.qty || 1;
                 const rate = getRate(i.currency, targetCurr);
-                let base = i.stripVat ? i.price / (1 + (vatPct/100)) : i.price;
-                const final = (base * rate * qty) * (1 + (vatPct/100));
-                return [qty, i.desc, i.provider, i.link, `${i.price} ${i.currency}`, final.toFixed(2)];
+                const netUnitSrc = i.stripVat ? i.price / (1 + (vatPct/100)) : i.price;
+                const netUnit = netUnitSrc * rate;
+                const lineNet = netUnit * qty;
+                subtotal += lineNet;
+                return [qty, i.desc, i.provider || '', i.link || '', `${netUnit.toFixed(2)} ${targetCurr}`, `${lineNet.toFixed(2)} ${targetCurr}`];
             });
+            const vatAmount = subtotal * (vatPct/100);
+            const total = subtotal + vatAmount;
 
             doc.autoTable({
-                head: [[i18next.t('thQty'), i18next.t('thDesc'), i18next.t('providerLabel'), "Link", i18next.t('thUnit'), `${i18next.t('thTotal')} (${targetCurr})`]],
+                head: [[i18next.t('thQty'), i18next.t('thDesc'), i18next.t('providerLabel'), "Link", i18next.t('thUnit'), i18next.t('thTotal')]],
                 body: body,
-                startY: 35,
+                foot: [
+                    [{ content: i18next.t('subtotal'), colSpan: 5, styles: { halign: 'right' } }, `${subtotal.toFixed(2)} ${targetCurr}`],
+                    [{ content: `${i18next.t('vatAmount')} (${vatPct}%)`, colSpan: 5, styles: { halign: 'right' } }, `${vatAmount.toFixed(2)} ${targetCurr}`],
+                    [{ content: i18next.t('totalIncVat'), colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, { content: `${total.toFixed(2)} ${targetCurr}`, styles: { fontStyle: 'bold' } }]
+                ],
+                startY: hy + 6,
                 styles: { font: fontUsed, fontSize: 9, overflow: 'linebreak' },
+                headStyles: { fillColor: [234, 179, 8], textColor: [5, 5, 5] },
+                footStyles: { fillColor: [245, 245, 245], textColor: [31, 41, 55] },
                 columnStyles: { 3: { textColor: [0,0,255] } },
                 didDrawCell: (d) => {
                     if (d.column.index === 3 && d.cell.raw && d.section === 'body') {
@@ -896,22 +1561,27 @@
         function sendEmail() {
             const targetCurr = appState.config.targetCurrency;
             const vatPct = appState.config.vatRate;
+            const meta = appState.meta || {};
             let body = `${i18next.t('emailHeader')}\n\n`;
-            let total = 0;
-            
+            if (meta.client) body += `${i18next.t('billTo')}: ${meta.client}\n`;
+            if (meta.quoteNo) body += `${i18next.t('quoteNoLabel')}: ${meta.quoteNo}\n`;
+            if (meta.validUntil) body += `${i18next.t('validUntilLabel')}: ${meta.validUntil}\n`;
+            body += `\n`;
+            let subtotal = 0;
             appState.items.forEach(i => {
                 const qty = i.qty || 1;
                 const rate = getRate(i.currency, targetCurr);
-                let base = i.stripVat ? i.price / (1 + (vatPct/100)) : i.price;
-                const final = (base * rate * qty) * (1 + (vatPct/100));
-                total += final;
-                
+                const netUnitSrc = i.stripVat ? i.price / (1 + (vatPct/100)) : i.price;
+                const lineNet = netUnitSrc * rate * qty;
+                subtotal += lineNet;
                 const qtyStr = qty > 1 ? `${qty}x ` : '';
-                body += `• ${qtyStr}${i.desc} (${i.provider}): ${final.toFixed(2)} ${targetCurr}\n`;
+                body += `• ${qtyStr}${i.desc} (${i.provider}): ${lineNet.toFixed(2)} ${targetCurr}\n`;
                 if(i.link) body += `  ${i.link}\n`;
             });
-            
-            body += `\n${i18next.t('totalIncVat')}: ${total.toFixed(2)} ${targetCurr}`;
+            const vatAmount = subtotal * (vatPct/100);
+            body += `\n${i18next.t('subtotal')}: ${subtotal.toFixed(2)} ${targetCurr}`;
+            body += `\n${i18next.t('vatAmount')} (${vatPct}%): ${vatAmount.toFixed(2)} ${targetCurr}`;
+            body += `\n${i18next.t('totalIncVat')}: ${(subtotal + vatAmount).toFixed(2)} ${targetCurr}`;
             const subject = `${appState.config.orgName} - Quote`;
             window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         }
@@ -931,34 +1601,37 @@
                     appTitle: "General Quotation", dropzoneTitle: "Load Config", dropzoneSub: "Drop JSON here or click",
                     settingsTitle: "Global Settings", targetCurrency: "Target Currency", vatLabel: "VAT (%)",
                     addItemTitle: "Item Details", catalogLabel: "Catalog", customItem: "Custom Item",
+                    browseCatalog: "Browse Catalog", searchCatalog: "Search products & services…", allItems: "All", noResults: "No matching items", prefillHint: "Click to fill the form; use + to add directly",
                     descLabel: "Description", priceLabel: "Price", currencyLabel: "Currency", providerLabel: "Provider", linkLabel: "Link", notesLabel: "Notes", stripVatLabel: "Price includes VAT (Strip it)", qtyLabel: "Qty",
                     btnAdd: "Add Item", btnUpdate: "Update Item", btnClear: "Clear", actionsTitle: "Actions & Export",
                     btnExcel: "Excel", btnPdf: "PDF", btnImage: "Image", btnEmail: "Email", btnReset: "Reset All",
-                    thQty: "#", thDesc: "Description", thDetails: "Details", thUnit: "Unit Price", thTotal: "Total", totalIncVat: "TOTAL (Inc. VAT)",
-                    configLoaded: "Configuration Loaded Successfully!", validationError: "Description and Price are required", confirmReset: "Delete all data?", emailHeader: "Here is the quotation summary:", editingMode: "Editing Item"
+                    thQty: "Qty", thDesc: "Description", thDetails: "Details", thUnit: "Unit (net)", thTotal: "Amount (net)", totalIncVat: "TOTAL (Inc. VAT)",
+                    configLoaded: "Configuration Loaded Successfully!", validationError: "Description and a price greater than 0 are required", confirmReset: "Delete all data?", emailHeader: "Here is the quotation summary:", editingMode: "Editing Item", quoteDetailsTitle: "Quotation", clientLabel: "Bill To (Client)", quoteNoLabel: "Quote #", validUntilLabel: "Valid Until", billTo: "Bill To", subtotal: "Subtotal", vatAmount: "VAT", dateLabel: "Date", incVatShort: "incl. VAT", ratesWarn: "Live exchange rates unavailable — converted amounts may be inaccurate."
                 }},
                 es: { translation: {
                     appTitle: "Cotización General", dropzoneTitle: "Cargar Config", dropzoneSub: "Arrastra JSON aquí o clic",
                     settingsTitle: "Configuración Global", targetCurrency: "Moneda Destino", vatLabel: "IVA (%)",
                     addItemTitle: "Detalles del Ítem", catalogLabel: "Catálogo", customItem: "Ítem Personalizado",
+                    browseCatalog: "Explorar Catálogo", searchCatalog: "Buscar productos y servicios…", allItems: "Todos", noResults: "Sin coincidencias", prefillHint: "Clic para rellenar el formulario; usa + para agregar directamente",
                     descLabel: "Descripción", priceLabel: "Precio", currencyLabel: "Moneda", providerLabel: "Proveedor", linkLabel: "Enlace", notesLabel: "Notas", stripVatLabel: "El precio incluye IVA (Desglosar)", qtyLabel: "Cant",
                     btnAdd: "Agregar", btnUpdate: "Actualizar", btnClear: "Limpiar", actionsTitle: "Acciones y Exportar",
                     btnExcel: "Excel", btnPdf: "PDF", btnImage: "Imagen", btnEmail: "Correo", btnReset: "Reiniciar",
-                    thQty: "#", thDesc: "Descripción", thDetails: "Detalles", thUnit: "Precio Unit.", thTotal: "Total", totalIncVat: "TOTAL (Con IVA)",
-                    configLoaded: "¡Configuración cargada!", validationError: "Descripción y Precio son requeridos", confirmReset: "¿Borrar todos los datos?", emailHeader: "Aquí está el resumen:", editingMode: "Editando..."
+                    thQty: "Cant", thDesc: "Descripción", thDetails: "Detalles", thUnit: "Unit. (neto)", thTotal: "Importe (neto)", totalIncVat: "TOTAL (Con IVA)",
+                    configLoaded: "¡Configuración cargada!", validationError: "Descripción y un precio mayor a 0 son requeridos", confirmReset: "¿Borrar todos los datos?", emailHeader: "Aquí está el resumen:", editingMode: "Editando...", quoteDetailsTitle: "Cotización", clientLabel: "Facturar a (Cliente)", quoteNoLabel: "N.º Cotización", validUntilLabel: "Válido Hasta", billTo: "Facturar a", subtotal: "Subtotal", vatAmount: "IVA", dateLabel: "Fecha", incVatShort: "IVA incl.", ratesWarn: "Tipos de cambio no disponibles — los importes convertidos pueden ser inexactos."
                 }},
                 ja: { translation: {
                     appTitle: "一般見積", dropzoneTitle: "設定をロード", dropzoneSub: "JSONをドロップまたはクリック",
                     settingsTitle: "全体設定", targetCurrency: "見積通貨", vatLabel: "消費税 (%)",
                     addItemTitle: "アイテム詳細", catalogLabel: "カタログ", customItem: "カスタムアイテム",
+                    browseCatalog: "カタログを見る", searchCatalog: "製品・サービスを検索…", allItems: "すべて", noResults: "該当なし", prefillHint: "クリックでフォームに入力、+ で直接追加",
                     descLabel: "説明", priceLabel: "価格", currencyLabel: "通貨", providerLabel: "プロバイダー", linkLabel: "リンク", notesLabel: "備考", stripVatLabel: "税込価格 (税を抜く)", qtyLabel: "数量",
                     btnAdd: "追加", btnUpdate: "更新", btnClear: "クリア", actionsTitle: "操作とエクスポート",
                     btnExcel: "Excel", btnPdf: "PDF", btnImage: "画像", btnEmail: "メール", btnReset: "リセット",
-                    thQty: "数", thDesc: "説明", thDetails: "詳細", thUnit: "単価", thTotal: "合計", totalIncVat: "合計 (税込)",
-                    configLoaded: "設定がロードされました", validationError: "説明と価格は必須です", confirmReset: "データを削除しますか？", emailHeader: "見積もり概要:", editingMode: "編集中"
+                    thQty: "数", thDesc: "説明", thDetails: "詳細", thUnit: "単価 (税抜)", thTotal: "金額 (税抜)", totalIncVat: "合計 (税込)",
+                    configLoaded: "設定がロードされました", validationError: "説明と0より大きい価格が必要です", confirmReset: "データを削除しますか？", emailHeader: "見積もり概要:", editingMode: "編集中", quoteDetailsTitle: "見積", clientLabel: "請求先 (顧客)", quoteNoLabel: "見積番号", validUntilLabel: "有効期限", billTo: "請求先", subtotal: "小計", vatAmount: "消費税", dateLabel: "日付", incVatShort: "税込", ratesWarn: "為替レートを取得できません — 換算額が不正確な場合があります。"
                 }}
             };
-            
+
             // Add custom dictionary logic
             if(appState.customDictionary) {
                 Object.keys(appState.customDictionary).forEach(lang => {
@@ -966,7 +1639,7 @@
                     else resources[lang] = { translation: appState.customDictionary[lang] };
                 });
             }
-            
+
             i18next.use(i18nextBrowserLanguageDetector).init({ fallbackLng: 'en', resources: resources }, () => updateText());
         }
 
@@ -978,5 +1651,6 @@
             document.getElementById('notes').placeholder = i18next.t('notesLabel');
         }
     </script>
+  <script src="carino-navbar.js" data-app="Quotation" defer></script>
 </body>
 </html>
