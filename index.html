@@ -12,8 +12,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/i18next/23.2.3/i18next.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/i18next-browser-languagedetector/7.1.0/i18nextBrowserLanguageDetector.min.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Red+Hat+Display:wght@700;900&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="fonts/carino-fonts.css">
 
     <style>
         :root {
@@ -1495,8 +1494,8 @@
 
             let fontUsed = "helvetica";
             try {
-                // Noto Sans JP TTF (High reliability)
-                const fontRes = await fetch('https://unpkg.com/@fontsource/noto-sans-jp@5.0.12/files/noto-sans-jp-all-400-normal.woff');
+                // Noto Sans JP — self-hosted full TTF (latin + kana + kanji) for jsPDF embedding.
+                const fontRes = await fetch('fonts/NotoSansJP-Regular.ttf');
                 if(fontRes.ok) {
                     const fontBuf = await fontRes.arrayBuffer();
                     doc.addFileToVFS("NotoSansJP.ttf", new Uint8Array(fontBuf));
