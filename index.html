@@ -157,20 +157,12 @@
             .cat-rail { width: 130px; }
         }
 
-        /* --- Mobile drawer helpers (hidden until the breakpoint; see script) --- */
-        #gqMenuBtn {
-            display: none; flex-shrink: 0;
-            width: 38px; height: 38px; align-items: center; justify-content: center;
-            background: transparent; border: 1px solid var(--border); border-radius: 6px;
-            color: var(--accent); font-size: 1.15rem; line-height: 1; cursor: pointer; transition: 0.2s;
-        }
-        #gqMenuBtn:hover { border-color: var(--accent); background: rgba(234,179,8,0.08); }
+        /* --- Mobile drawer + handy-bar helpers (hidden until the breakpoint) --- */
         #gqScrim { display: none; }
         #gqDrawerActions { display: none; }
+        .handy-bar { display: none; }
 
         @media (max-width: 900px) {
-            #gqMenuBtn { display: flex; }
-
             /* Sidebar → off-canvas drawer under the 60px navbar. */
             .sidebar {
                 position: fixed; top: 60px; left: 0; bottom: 0;
@@ -201,6 +193,29 @@
 
             .preview-area { padding: 20px; }
             .form-row { flex-direction: column; }
+
+            /* --- Handy bar: a floating quick-action pill, mobile only ---
+               Holds the actions you reach for without opening the form drawer:
+               open form (☰), browse catalog, add item, then the four exports.
+               It hides while the drawer is open so it never overlaps the form. */
+            .handy-bar {
+                display: flex; align-items: center; gap: 5px;
+                position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%);
+                z-index: 50; padding: 6px;
+                background: rgba(13, 13, 13, 0.92); border: 1px solid var(--border);
+                border-radius: 12px; box-shadow: 0 14px 38px rgba(0, 0, 0, 0.6);
+                -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+                max-width: calc(100vw - 24px);
+            }
+            .handy-bar .handy-btn {
+                width: 38px; height: 38px; flex-shrink: 0;
+                display: flex; align-items: center; justify-content: center;
+                background: transparent; border: 1px solid transparent; border-radius: 8px;
+                color: var(--text-main); font-size: 1.05rem; line-height: 1; cursor: pointer; transition: 0.15s;
+            }
+            .handy-bar .handy-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(234,179,8,0.08); }
+            .handy-bar .handy-div { width: 1px; height: 22px; background: var(--border); margin: 0 2px; flex-shrink: 0; }
+            body.gq-lock .handy-bar { display: none; } /* out of the way while the drawer is open */
         }
     </style>
 </head>
@@ -1688,13 +1703,26 @@
             document.getElementById('notes').placeholder = i18next.t('notesLabel');
         }
     </script>
+  <!-- Handy bar: floating quick-action pill, shown on mobile only (see CSS).
+       Buttons call the same handlers as the sidebar; ☰ opens the form drawer. -->
+  <div class="handy-bar" id="handyBar" role="toolbar" aria-label="Quick actions">
+    <button type="button" id="handyMenu" class="handy-btn" title="Open form" aria-label="Open form">☰</button>
+    <button type="button" class="handy-btn" title="Browse catalog" aria-label="Browse catalog" onclick="openCatalog()">&#8862;</button>
+    <button type="button" class="handy-btn" title="Add item" aria-label="Add item" onclick="handleUpsert()">＋</button>
+    <span class="handy-div"></span>
+    <button type="button" class="handy-btn" title="Export Excel" aria-label="Export Excel" onclick="exportXLSX()">📊</button>
+    <button type="button" class="handy-btn" title="Export PDF" aria-label="Export PDF" onclick="exportPDF()">📄</button>
+    <button type="button" class="handy-btn" title="Export image" aria-label="Export image" onclick="exportImage()">🖼️</button>
+    <button type="button" class="handy-btn" title="Email" aria-label="Email" onclick="sendEmail()">📧</button>
+  </div>
+
   <script src="carino-navbar.js" data-app="Quotation" defer></script>
   <script>
-  /* Mobile: turn the sidebar into a ☰ drawer opened from the shared navbar, and
-     fold the language switch (relocated into the navbar as .cn-actions) into a
-     section at the top of that drawer. Everything reverses above 900px. The
-     moved nodes are the real ones, so their handlers survive. Same pattern as
-     netplan/network.carino.systems. */
+  /* Mobile: the sidebar becomes an off-canvas drawer opened from the floating
+     handy bar's ☰. The language switch (relocated into the navbar as .cn-actions)
+     folds into a section at the top of that drawer. Everything reverses above
+     900px, where the handy bar is hidden and options live in the sidebar/navbar.
+     Moved nodes are the real ones, so their handlers survive. */
   (function () {
     'use strict';
     var MQ = window.matchMedia('(max-width: 900px)');
@@ -1718,6 +1746,11 @@
     scrim.addEventListener('click', close);
     window.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
 
+    var menu = document.getElementById('handyMenu');
+    if (menu) menu.addEventListener('click', function (e) { e.stopPropagation(); toggle(); });
+
+    // Move the language switch between the navbar (desktop) and the drawer top
+    // (mobile) as the breakpoint flips.
     function syncActions() {
       var nav = document.getElementById('carinoNav');
       var lang = document.querySelector('.cn-actions'); // #lang-container, relocated by carino-navbar.js
@@ -1731,22 +1764,13 @@
       }
     }
 
-    function addBtn() {
-      var nav = document.getElementById('carinoNav');
-      if (!nav) return false;
-      if (document.getElementById('gqMenuBtn')) return true;
-      var b = document.createElement('button');
-      b.id = 'gqMenuBtn'; b.type = 'button';
-      b.setAttribute('aria-label', 'Toggle controls');
-      b.textContent = '☰'; // ☰
-      b.addEventListener('click', function (e) { e.stopPropagation(); toggle(); });
-      var left = nav.querySelector('.cn-left');
-      if (left) left.insertBefore(b, left.firstChild); else nav.insertBefore(b, nav.firstChild);
-      return true;
+    if (!syncActions()) {
+      // navbar may not have mounted yet; retry until .cn-actions appears
+      var n = 0, iv = setInterval(function () {
+        syncActions();
+        if (document.querySelector('.cn-actions') || ++n > 40) clearInterval(iv);
+      }, 50);
     }
-
-    function boot() { if (!addBtn()) return false; syncActions(); return true; }
-    if (!boot()) { var n = 0, iv = setInterval(function () { if (boot() || ++n > 40) clearInterval(iv); }, 50); }
     if (MQ.addEventListener) MQ.addEventListener('change', syncActions);
     else if (MQ.addListener) MQ.addListener(syncActions);
   })();
