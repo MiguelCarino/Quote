@@ -157,10 +157,48 @@
             .cat-rail { width: 130px; }
         }
 
+        /* --- Mobile drawer helpers (hidden until the breakpoint; see script) --- */
+        #gqMenuBtn {
+            display: none; flex-shrink: 0;
+            width: 38px; height: 38px; align-items: center; justify-content: center;
+            background: transparent; border: 1px solid var(--border); border-radius: 6px;
+            color: var(--accent); font-size: 1.15rem; line-height: 1; cursor: pointer; transition: 0.2s;
+        }
+        #gqMenuBtn:hover { border-color: var(--accent); background: rgba(234,179,8,0.08); }
+        #gqScrim { display: none; }
+        #gqDrawerActions { display: none; }
+
         @media (max-width: 900px) {
-            body { height: auto; }
-            .main-container { flex-direction: column; overflow-y: auto; }
-            .sidebar { width: 100%; box-sizing: border-box; }
+            #gqMenuBtn { display: flex; }
+
+            /* Sidebar → off-canvas drawer under the 60px navbar. */
+            .sidebar {
+                position: fixed; top: 60px; left: 0; bottom: 0;
+                width: min(90vw, 380px); z-index: 2147482000;
+                transform: translateX(-100%); transition: transform 0.25s ease;
+                box-shadow: 0 0 44px rgba(0, 0, 0, 0.6);
+            }
+            .sidebar.open { transform: translateX(0); }
+
+            #gqScrim {
+                display: block; position: fixed; inset: 60px 0 0 0;
+                background: rgba(0, 0, 0, 0.55); opacity: 0; pointer-events: none;
+                transition: opacity 0.25s ease; z-index: 2147481000;
+            }
+            #gqScrim.open { opacity: 1; pointer-events: auto; }
+
+            /* Language switch, folded to the top of the drawer. */
+            #gqDrawerActions {
+                display: block; flex-shrink: 0;
+                margin: -20px -20px 0; padding: 14px 20px;
+                border-bottom: 1px solid var(--border); background: var(--bg-elev);
+            }
+            #gqDrawerActions .da-title {
+                font-family: var(--mono); font-size: 0.62rem; font-weight: 700;
+                text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 10px;
+            }
+            #gqDrawerActions .lang-switch { width: fit-content; }
+
             .preview-area { padding: 20px; }
             .form-row { flex-direction: column; }
         }
@@ -1651,5 +1689,67 @@
         }
     </script>
   <script src="carino-navbar.js" data-app="Quotation" defer></script>
+  <script>
+  /* Mobile: turn the sidebar into a ☰ drawer opened from the shared navbar, and
+     fold the language switch (relocated into the navbar as .cn-actions) into a
+     section at the top of that drawer. Everything reverses above 900px. The
+     moved nodes are the real ones, so their handlers survive. Same pattern as
+     netplan/network.carino.systems. */
+  (function () {
+    'use strict';
+    var MQ = window.matchMedia('(max-width: 900px)');
+    var sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+
+    var scrim = document.createElement('div');
+    scrim.id = 'gqScrim';
+    document.body.appendChild(scrim);
+
+    var actions = document.createElement('div');
+    actions.id = 'gqDrawerActions';
+    actions.innerHTML = '<div class="da-title">Language</div><div id="gqActionsSlot"></div>';
+    sidebar.insertBefore(actions, sidebar.firstChild);
+    var slot = actions.querySelector('#gqActionsSlot');
+
+    function open() { sidebar.classList.add('open'); scrim.classList.add('open'); document.body.classList.add('gq-lock'); }
+    function close() { sidebar.classList.remove('open'); scrim.classList.remove('open'); document.body.classList.remove('gq-lock'); }
+    function toggle() { sidebar.classList.contains('open') ? close() : open(); }
+
+    scrim.addEventListener('click', close);
+    window.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+
+    function syncActions() {
+      var nav = document.getElementById('carinoNav');
+      var lang = document.querySelector('.cn-actions'); // #lang-container, relocated by carino-navbar.js
+      if (!lang) return;
+      if (MQ.matches) {
+        if (lang.parentNode !== slot) slot.appendChild(lang);
+      } else {
+        var right = nav && nav.querySelector('.cn-right');
+        if (right && lang.parentNode !== right) right.insertBefore(lang, right.querySelector('.social-row'));
+        close();
+      }
+    }
+
+    function addBtn() {
+      var nav = document.getElementById('carinoNav');
+      if (!nav) return false;
+      if (document.getElementById('gqMenuBtn')) return true;
+      var b = document.createElement('button');
+      b.id = 'gqMenuBtn'; b.type = 'button';
+      b.setAttribute('aria-label', 'Toggle controls');
+      b.textContent = '☰'; // ☰
+      b.addEventListener('click', function (e) { e.stopPropagation(); toggle(); });
+      var left = nav.querySelector('.cn-left');
+      if (left) left.insertBefore(b, left.firstChild); else nav.insertBefore(b, nav.firstChild);
+      return true;
+    }
+
+    function boot() { if (!addBtn()) return false; syncActions(); return true; }
+    if (!boot()) { var n = 0, iv = setInterval(function () { if (boot() || ++n > 40) clearInterval(iv); }, 50); }
+    if (MQ.addEventListener) MQ.addEventListener('change', syncActions);
+    else if (MQ.addListener) MQ.addListener(syncActions);
+  })();
+  </script>
 </body>
 </html>
