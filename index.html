@@ -6,12 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quote — Quotation Maker</title>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/i18next/23.2.3/i18next.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/i18next-browser-languagedetector/7.1.0/i18nextBrowserLanguageDetector.min.js"></script>
+    <script src="vendor/xlsx.full.min.js"></script>
+    <script src="vendor/jspdf.umd.min.js"></script>
+    <script src="vendor/jspdf.plugin.autotable.min.js"></script>
+    <script src="vendor/html2canvas.min.js"></script>
+    <script src="vendor/i18next.min.js"></script>
+    <script src="vendor/i18nextBrowserLanguageDetector.min.js"></script>
 <link rel="stylesheet" href="fonts/carino-fonts.css">
 
     <style>
@@ -22,12 +22,12 @@
             --bg-body: #050505;
             --bg-surface: #0b0b0b;
             --bg-elev: #0d0d0d;
-            --text-main: #f5f5f5;
-            --text-muted: #8a8a8a;
+            --text-main: #fff;
+            --text-muted: #a3a3a3;
             --border: #262626;
             --success: #22c55e;
             --danger: #ef4444;
-            --warning: #f59e0b;
+            --warning: #eab308;
             --sans: 'IBM Plex Sans', 'Noto Sans JP', system-ui, -apple-system, sans-serif;
             --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
             --display: 'Red Hat Display', var(--sans);
@@ -70,7 +70,7 @@
             font-size: 0.85rem; font-family: var(--mono); color: var(--text-main); transition: border-color 0.15s; width: 100%; box-sizing: border-box;
         }
         input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(234,179,8,0.12); }
-        select option { background: #111; color: #fff; }
+        select option { background: var(--bg-elev); color: #fff; }
         input[type=checkbox] { width: auto; accent-color: var(--accent); vertical-align: middle; }
 
         .edit-indicator {
@@ -114,7 +114,7 @@
         .print-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; border-bottom: 2px solid var(--primary); padding-bottom: 18px; }
         .print-logo { height: 56px; width: auto; }
 
-        .rates-warn { background: rgba(234,179,8,0.08); border: 1px solid rgba(234,179,8,0.5); color: #fcd34d; font-family: var(--mono); font-size: 0.68rem; line-height: 1.5; padding: 8px 10px; border-radius: 6px; }
+        .rates-warn { background: rgba(234,179,8,0.08); border: 1px solid rgba(234,179,8,0.5); color: var(--accent); font-family: var(--mono); font-size: 0.68rem; line-height: 1.5; padding: 8px 10px; border-radius: 6px; }
         .paper .print-meta { font-family: var(--mono); font-size: 0.72rem; color: var(--text-muted); margin-top: 8px; line-height: 1.6; }
         .paper .print-billto { font-size: 0.9rem; color: #1f2937; margin: 0 0 6px; }
         .paper .print-billto b { font-family: var(--mono); font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); display: block; margin-bottom: 2px; }
