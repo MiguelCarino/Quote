@@ -8,5 +8,3 @@ Self-hosted copies (no CDN, per fleet policy). Sourced from cdnjs.cloudflare.com
 | jspdf.umd.min.js | jsPDF | 2.5.1 | MIT |
 | jspdf.plugin.autotable.min.js | jsPDF-AutoTable | 3.5.28 | MIT |
 | html2canvas.min.js | html2canvas | 1.4.1 | MIT |
-| i18next.min.js | i18next | 23.2.3 | MIT |
-| i18nextBrowserLanguageDetector.min.js | i18next-browser-languageDetector | 7.1.0 | MIT |

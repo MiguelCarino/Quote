@@ -10,8 +10,6 @@
     <script src="vendor/jspdf.umd.min.js"></script>
     <script src="vendor/jspdf.plugin.autotable.min.js"></script>
     <script src="vendor/html2canvas.min.js"></script>
-    <script src="vendor/i18next.min.js"></script>
-    <script src="vendor/i18nextBrowserLanguageDetector.min.js"></script>
 <link rel="stylesheet" href="fonts/carino-fonts.css">
 
     <style>
@@ -35,12 +33,6 @@
 
         * { box-sizing: border-box; }
         body { font-family: var(--sans); margin: 0; background: var(--bg-body); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; }
-
-        /* Language switch — relocated INTO the Carino navbar via [data-carino-actions] */
-        .lang-switch { display: flex; gap: 2px; background: transparent; padding: 2px; border: 1px solid var(--border); border-radius: 6px; }
-        .lang-btn { background: transparent; border: none; padding: 4px 10px; font-family: var(--mono); font-size: 0.66rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted); cursor: pointer; border-radius: 4px; transition: 0.15s; }
-        .lang-btn:hover { color: var(--accent); }
-        .lang-btn.active { background: var(--accent); color: #050505; }
 
         .main-container { display: flex; flex: 1; overflow: hidden; }
 
@@ -159,7 +151,6 @@
 
         /* --- Mobile drawer + handy-bar helpers (hidden until the breakpoint) --- */
         #gqScrim { display: none; }
-        #gqDrawerActions { display: none; }
         .handy-bar { display: none; }
 
         @media (max-width: 900px) {
@@ -178,18 +169,6 @@
                 transition: opacity 0.25s ease; z-index: 2147481000;
             }
             #gqScrim.open { opacity: 1; pointer-events: auto; }
-
-            /* Language switch, folded to the top of the drawer. */
-            #gqDrawerActions {
-                display: block; flex-shrink: 0;
-                margin: -20px -20px 0; padding: 14px 20px;
-                border-bottom: 1px solid var(--border); background: var(--bg-elev);
-            }
-            #gqDrawerActions .da-title {
-                font-family: var(--mono); font-size: 0.62rem; font-weight: 700;
-                text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 10px;
-            }
-            #gqDrawerActions .lang-switch { width: fit-content; }
 
             .preview-area { padding: 20px; }
             .form-row { flex-direction: column; }
@@ -221,21 +200,18 @@
 </head>
 <body>
 
-    <!-- language switch is relocated into the shared Carino navbar -->
-    <div id="lang-container" data-carino-actions class="lang-switch"></div>
-
     <div class="main-container">
         <aside class="sidebar">
 
             <div>
-                <div class="section-title" data-i18n="settingsTitle">Global Settings</div>
+                <div class="section-title" data-i18n>Global Settings</div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label data-i18n="targetCurrency">Target Currency</label>
+                        <label data-i18n>Target Currency</label>
                         <select id="global-currency" class="dynamic-currency"></select>
                     </div>
                     <div class="form-group">
-                        <label data-i18n="vatLabel">VAT (%)</label>
+                        <label data-i18n>VAT (%)</label>
                         <input type="number" id="global-vat" value="16">
                     </div>
                 </div>
@@ -244,99 +220,99 @@
             <div id="rates-warn" class="rates-warn" style="display:none;"></div>
 
             <div>
-                <div class="section-title" data-i18n="quoteDetailsTitle">Quotation</div>
+                <div class="section-title" data-i18n>Quotation</div>
                 <div class="form-group" style="margin-bottom:12px;">
-                    <label data-i18n="clientLabel">Bill To (Client)</label>
+                    <label data-i18n>Bill To (Client)</label>
                     <input type="text" id="q-client" translate="no">
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label data-i18n="quoteNoLabel">Quote #</label>
+                        <label data-i18n>Quote #</label>
                         <input type="text" id="q-number">
                     </div>
                     <div class="form-group">
-                        <label data-i18n="validUntilLabel">Valid Until</label>
+                        <label data-i18n>Valid Until</label>
                         <input type="date" id="q-valid">
                     </div>
                 </div>
             </div>
 
             <div>
-                <div class="section-title" data-i18n="addItemTitle">Item Details</div>
+                <div class="section-title" data-i18n>Item Details</div>
 
                 <div id="edit-indicator" class="edit-indicator">
-                    <span data-i18n="editingMode">Editing Item...</span>
+                    <span data-i18n>Editing Item</span>
                     <button onclick="cancelEdit()" style="background:none;border:none;cursor:pointer;">✖</button>
                 </div>
 
                 <div class="form-group" style="margin-bottom: 12px;">
-                    <label data-i18n="catalogLabel">Catalog</label>
-                    <button type="button" class="btn btn-primary" onclick="openCatalog()" style="display:flex;align-items:center;justify-content:center;gap:6px;">&#8862; <span data-i18n="browseCatalog">Browse Catalog</span></button>
+                    <label data-i18n>Catalog</label>
+                    <button type="button" class="btn btn-primary" onclick="openCatalog()" style="display:flex;align-items:center;justify-content:center;gap:6px;">&#8862; <span data-i18n>Browse Catalog</span></button>
                 </div>
 
                 <div class="form-group" style="margin-bottom: 12px;">
-                    <label data-i18n="descLabel">Description</label>
+                    <label data-i18n>Description</label>
                     <input type="text" id="description">
                 </div>
 
                 <div class="form-row">
                     <div class="form-group" style="flex: 0 0 70px;">
-                        <label data-i18n="qtyLabel">Qty</label>
+                        <label data-i18n>Qty</label>
                         <input type="number" id="quantity" value="1" min="1">
                     </div>
                     <div class="form-group" style="flex: 1.5;">
-                        <label data-i18n="priceLabel">Price</label>
+                        <label data-i18n>Price</label>
                         <input type="number" id="price" step="0.01">
                     </div>
                     <div class="form-group">
-                        <label data-i18n="currencyLabel">Currency</label>
+                        <label data-i18n>Currency</label>
                         <select id="item-currency" class="dynamic-currency"></select>
                     </div>
                 </div>
 
                 <div style="align-items: center; gap: 8px; margin-bottom: 15px;">
                     <input type="checkbox" id="remove-vat">
-                    <label for="remove-vat" data-i18n="stripVatLabel">Price includes VAT (Strip it)</label>
+                    <label for="remove-vat" data-i18n>Price includes VAT (Strip it)</label>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label data-i18n="providerLabel">Provider</label>
+                        <label data-i18n>Provider</label>
                         <input type="text" id="provider">
                     </div>
                     <div class="form-group">
-                        <label data-i18n="linkLabel">Link</label>
+                        <label data-i18n>Link</label>
                         <input type="text" id="link">
                     </div>
                 </div>
 
                 <div class="form-group" style="margin-bottom: 12px;">
-                    <label data-i18n="notesLabel">Notes</label>
+                    <label data-i18n>Notes</label>
                     <input type="text" id="notes">
                 </div>
 
                 <div class="form-row">
-                    <button id="btn-add-update" class="btn btn-primary" onclick="handleUpsert()" data-i18n="btnAdd">Add Item</button>
-                    <button class="btn btn-secondary" onclick="clearForm()" data-i18n="btnClear">Clear</button>
+                    <button id="btn-add-update" class="btn btn-primary" onclick="handleUpsert()" data-i18n>Add Item</button>
+                    <button class="btn btn-secondary" onclick="clearForm()" data-i18n>Clear</button>
                 </div>
             </div>
 
             <div>
-                <div class="section-title" data-i18n="actionsTitle">Actions & Export</div>
+                <div class="section-title" data-i18n>Actions & Export</div>
                 <div class="export-grid">
-                    <button class="btn btn-export" onclick="exportXLSX()"><span>📊</span> <span data-i18n="btnExcel">Excel</span></button>
-                    <button class="btn btn-export" onclick="exportPDF()"><span>📄</span> <span data-i18n="btnPdf">PDF</span></button>
-                    <button class="btn btn-export" onclick="exportImage()"><span>🖼️</span> <span data-i18n="btnImage">Image</span></button>
-                    <button class="btn btn-export" onclick="sendEmail()"><span>📧</span> <span data-i18n="btnEmail">Email</span></button>
+                    <button class="btn btn-export" onclick="exportXLSX()"><span>📊</span> <span data-i18n>Excel</span></button>
+                    <button class="btn btn-export" onclick="exportPDF()"><span>📄</span> <span data-i18n>PDF</span></button>
+                    <button class="btn btn-export" onclick="exportImage()"><span>🖼️</span> <span data-i18n>Image</span></button>
+                    <button class="btn btn-export" onclick="sendEmail()"><span>📧</span> <span data-i18n>Email</span></button>
                 </div>
             </div>
 
             <div class="dropzone" id="config-dropzone">
                 <input type="file" id="config-input" accept=".json" hidden>
-                <strong id="dz-title" data-i18n="dropzoneTitle">Load Config</strong>
-                <p id="dz-sub" data-i18n="dropzoneSub">Drop JSON here or click</p>
+                <strong id="dz-title" data-i18n>Load Config</strong>
+                <p id="dz-sub" data-i18n>Drop JSON here or click</p>
             </div>
-            <div><button class="btn btn-secondary" onclick="resetAll()" style="margin-top: 10px; color: var(--danger); border-color: var(--danger);" data-i18n="btnReset">Reset All</button></div>
+            <div><button class="btn btn-secondary" onclick="resetAll()" style="margin-top: 10px; color: var(--danger); border-color: var(--danger);" data-i18n>Reset All</button></div>
         </aside>
 
         <main class="preview-area">
@@ -356,11 +332,11 @@
                 <table id="quoteTable">
                     <thead>
                         <tr>
-                            <th style="width: 50px;" class="center" data-i18n="thQty">#</th>
-                            <th data-i18n="thDesc">Description</th>
-                            <th data-i18n="thDetails">Details</th>
-                            <th class="numeric" data-i18n="thUnit">Unit Price</th>
-                            <th class="numeric" data-i18n="thTotal">Total</th>
+                            <th style="width: 50px;" class="center" data-i18n>Qty</th>
+                            <th data-i18n>Description</th>
+                            <th data-i18n>Details</th>
+                            <th class="numeric" data-i18n>Unit (net)</th>
+                            <th class="numeric" data-i18n>Amount (net)</th>
                             <th class="delete-col"></th>
                         </tr>
                     </thead>
@@ -376,7 +352,7 @@
     <div id="cat-modal" class="cat-modal-backdrop" translate="no" onclick="if(event.target===this) closeCatalog()">
         <div class="cat-modal" role="dialog" aria-modal="true">
             <div class="cat-head">
-                <h2 data-i18n="browseCatalog">Browse Catalog</h2>
+                <h2 data-i18n>Browse Catalog</h2>
                 <input type="text" id="cat-search" class="cat-search" oninput="catState.q=this.value; renderCatalog();" autocomplete="off">
                 <button class="cat-close" onclick="closeCatalog()" aria-label="Close">&times;</button>
             </div>
@@ -403,15 +379,9 @@
             },
             "settings": {
                 "defaults": {
-                    "currency": "USD",
-                    "language": "en"
+                    "currency": "USD"
                 },
-                "currencies": ["USD", "CAD", "MXN", "JPY"],
-                "languages": {
-                    "en": "English",
-                    "es": "Español",
-                    "ja": "日本語"
-                }
+                "currencies": ["USD", "CAD", "MXN", "JPY"]
             },
             "catalog": [
             // --- CONSULTING & SUPPORT ---
@@ -939,7 +909,6 @@
         ]
         };
 
-        const DEFAULT_LANGUAGES = { "en": "EN", "es": "ES", "ja": "JA" };
         const DEFAULT_CURRENCIES = ["USD", "MXN", "CAD", "JPY"];
 
         // --- 2. STATE ---
@@ -952,7 +921,6 @@
                 vatRate: 16
             },
             theme: { primary: "#eab308", background: "#050505" },
-            availableLanguages: DEFAULT_LANGUAGES,
             availableCurrencies: DEFAULT_CURRENCIES,
             customDictionary: {},
             catalog: [],
@@ -972,9 +940,11 @@
             // B. Overwrite with LocalStorage if exists (Persistence)
             loadState();
 
-            // C. Setup System
-            initI18n();
+            // C. Setup System (language itself is owned by carino-lang.js + i18n.js;
+            // here we only fold any config-supplied dictionary into I18N)
+            mergeCustomDictionary();
             setupUI();
+            updatePlaceholders();
             await fetchRates();
             renderTable();
 
@@ -995,10 +965,9 @@
 
             if(json.settings) {
                 if(json.settings.currencies) appState.availableCurrencies = json.settings.currencies;
-                if(json.settings.languages) appState.availableLanguages = json.settings.languages;
                 if(json.settings.defaults) {
                     if(json.settings.defaults.currency) appState.config.targetCurrency = json.settings.defaults.currency;
-                    // We don't set language here immediately, handled in initI18n
+                    // Language is a fleet-wide preference (carino-lang.js), not per-config.
                 }
             }
 
@@ -1017,7 +986,6 @@
                 appState.config = { ...appState.config, ...parsed.config };
                 if(parsed.items && parsed.items.length > 0) appState.items = parsed.items; // Only restore items if they exist
                 if(parsed.theme) appState.theme = parsed.theme;
-                if(parsed.availableLanguages) appState.availableLanguages = parsed.availableLanguages;
                 if(parsed.availableCurrencies) appState.availableCurrencies = parsed.availableCurrencies;
                 if(parsed.customDictionary) appState.customDictionary = parsed.customDictionary;
                 if(parsed.catalog && parsed.catalog.length > 0) appState.catalog = parsed.catalog;
@@ -1044,23 +1012,13 @@
                 pl.src = appState.config.logo;
                 pl.style.display = 'block';
             }
-            document.getElementById('print-org-name').innerText = appState.config.orgName;
+            // t() falls back to the string itself, so custom org names pass through
+            // untouched while the default "General Quotation" heading localizes.
+            document.getElementById('print-org-name').innerText = t(appState.config.orgName);
             document.title = `${appState.config.orgName} - Quote`;
 
             // Dropzone Logic
             setupDropzone();
-
-            // Language Buttons
-            const langContainer = document.getElementById('lang-container');
-            langContainer.innerHTML = '';
-            Object.entries(appState.availableLanguages).forEach(([code, label]) => {
-                const btn = document.createElement('button');
-                btn.className = 'lang-btn';
-                btn.innerText = label;
-                btn.onclick = () => setLang(code);
-                if(i18next.language === code) btn.classList.add('active');
-                langContainer.appendChild(btn);
-            });
 
             // Currencies
             const currencySelects = document.querySelectorAll('.dynamic-currency');
@@ -1111,7 +1069,7 @@
             // Visual state check
             if(localStorage.getItem('quoteConfig')) {
                 dropzone.classList.add('success');
-                document.getElementById('dz-title').innerText = "Config Loaded";
+                setDzTitle('Config Loaded');
             }
 
             dropzone.onclick = () => fileInput.click();
@@ -1129,25 +1087,21 @@
 
                     // Use the shared apply function
                     applyConfig(json);
-
-                    // Add Dictionary logic for I18n specifically
-                    if(json.dictionary) {
-                        Object.keys(json.dictionary).forEach(lang => {
-                            i18next.addResourceBundle(lang, 'translation', json.dictionary[lang], true, true);
-                        });
-                    }
+                    mergeCustomDictionary();
 
                     saveState();
                     setupUI();
-                    updateText();
+                    applyStaticI18n();
+                    updatePlaceholders();
+                    renderTable();
 
                     // Success Feedback
                     const dz = document.getElementById('config-dropzone');
                     dz.classList.add('success');
-                    document.getElementById('dz-title').innerText = "Config Loaded";
+                    setDzTitle('Config Loaded');
 
                 } catch (err) {
-                    alert("Invalid JSON file");
+                    alert(t('Invalid JSON file'));
                     console.error(err);
                 }
             };
@@ -1172,7 +1126,7 @@
             normalizeCatalog();
             catState = { cat: '__all', q: '' };
             const s = document.getElementById('cat-search');
-            s.value = ''; s.placeholder = i18next.t('searchCatalog');
+            s.value = ''; s.placeholder = t('Search products & services…');
             renderCatalog();
             document.getElementById('cat-modal').classList.add('open');
             s.focus();
@@ -1199,7 +1153,7 @@
                 b.onclick = () => setCatFilter(value);
                 rail.appendChild(b);
             };
-            mkRailBtn(i18next.t('allItems'), appState.catalog.length, '__all');
+            mkRailBtn(t('All'), appState.catalog.length, '__all');
             catCategories().forEach(([name, count]) => mkRailBtn(name, count, name));
 
             // Product grid (category filter + free-text search over desc/provider/note)
@@ -1214,19 +1168,19 @@
                          || (it.note || '').toLowerCase().includes(q)));
 
             if (!matches.length) {
-                grid.innerHTML = `<div class="cat-empty">${i18next.t('noResults')}</div>`;
+                grid.innerHTML = `<div class="cat-empty">${t('No matching items')}</div>`;
                 return;
             }
             grid.innerHTML = matches.map(({ it, i }) => `
-                <div class="prod-card" onclick="fillFromCatalog(${i})" title="${escapeAttr(i18next.t('prefillHint'))}">
+                <div class="prod-card" onclick="fillFromCatalog(${i})" title="${escapeAttr(t('Click to fill the form; use + to add directly'))}">
                     <div class="pc-prov">${escapeHtml(it.provider || '—')}</div>
                     <div class="pc-desc">${escapeHtml(it.description || '')}</div>
                     ${it.note ? `<div class="pc-note">${escapeHtml(it.note)}</div>` : ''}
                     <div class="pc-foot">
                         <span class="pc-price">${(+it.price || 0).toFixed(2)} ${escapeHtml(it.currency || 'USD')}</span>
-                        ${it.vatStripped ? `<span class="pc-vat">${i18next.t('incVatShort')}</span>` : ''}
+                        ${it.vatStripped ? `<span class="pc-vat">${t('incl. VAT')}</span>` : ''}
                     </div>
-                    <button class="pc-add" onclick="event.stopPropagation(); quickAddCatalog(${i})">+ ${i18next.t('btnAdd')}</button>
+                    <button class="pc-add" onclick="event.stopPropagation(); quickAddCatalog(${i})">+ ${t('Add Item')}</button>
                 </div>`).join('');
         }
 
@@ -1260,7 +1214,7 @@
             });
             saveState();
             renderTable();
-            catToast('✓ ' + (it.description || i18next.t('btnAdd')));
+            catToast('✓ ' + (it.description || t('Add Item')));
         }
 
         function catToast(msg) {
@@ -1277,7 +1231,7 @@
             const price = parseFloat(document.getElementById('price').value);
             const qty = parseFloat(document.getElementById('quantity').value) || 1;
 
-            if (!desc || isNaN(price) || price <= 0) return alert(i18next.t('validationError'));
+            if (!desc || isNaN(price) || price <= 0) return alert(t('Description and a price greater than 0 are required'));
 
             const itemData = {
                 id: appState.editingId || Date.now(),
@@ -1316,7 +1270,8 @@
 
             document.getElementById('edit-indicator').style.display = 'flex';
             const btn = document.getElementById('btn-add-update');
-            btn.innerText = i18next.t('btnUpdate');
+            btn.dataset.i18nKey = 'Update Item'; // keep applyStaticI18n in sync
+            btn.innerText = t('Update Item');
             btn.classList.remove('btn-primary');
             btn.classList.add('btn-warning');
         }
@@ -1326,14 +1281,15 @@
             clearForm();
             document.getElementById('edit-indicator').style.display = 'none';
             const btn = document.getElementById('btn-add-update');
-            btn.innerText = i18next.t('btnAdd');
+            btn.dataset.i18nKey = 'Add Item'; // keep applyStaticI18n in sync
+            btn.innerText = t('Add Item');
             btn.classList.remove('btn-warning');
             btn.classList.add('btn-primary');
         }
 
         function deleteItem(id, event) {
             event.stopPropagation();
-            if(confirm(i18next.t('confirmReset') + "?")) { // Reusing reset text for delete
+            if(confirm(t('Remove this item?'))) {
                 appState.items = appState.items.filter(i => i.id !== id);
                 if(appState.editingId === id) cancelEdit();
                 saveState();
@@ -1352,7 +1308,7 @@
         }
 
         function resetAll() {
-            if(confirm(i18next.t('confirmReset'))) {
+            if(confirm(t('Delete all data?'))) {
                 localStorage.removeItem('quoteConfig');
                 location.reload();
             }
@@ -1396,7 +1352,7 @@
             const mixed = appState.items.some(i => i.currency !== target);
             if (!appState.ratesOk && mixed) {
                 el.style.display = 'block';
-                el.innerText = '\u26A0 ' + i18next.t('ratesWarn');
+                el.innerText = '\u26A0 ' + t('Live exchange rates unavailable — converted amounts may be inaccurate.');
             } else {
                 el.style.display = 'none';
             }
@@ -1450,7 +1406,7 @@
 
                 const showOrig = (item.currency !== targetCurr) || item.stripVat;
                 const origNote = showOrig
-                    ? `<div style="font-size:0.72em;color:#9ca3af;">${item.price.toFixed(2)} ${escapeHtml(item.currency)}${item.stripVat ? ' ' + i18next.t('incVatShort') : ''}</div>`
+                    ? `<div style="font-size:0.72em;color:#9ca3af;">${item.price.toFixed(2)} ${escapeHtml(item.currency)}${item.stripVat ? ' ' + t('incl. VAT') : ''}</div>`
                     : '';
 
                 const tr = document.createElement('tr');
@@ -1474,21 +1430,21 @@
             const vatAmount = subtotal * (vatPct/100);
             const total = subtotal + vatAmount;
             tfoot.innerHTML = `
-                <tr class="sub"><td colspan="4" style="text-align:right; color:var(--text-muted);">${i18next.t('subtotal')}</td>
+                <tr class="sub"><td colspan="4" style="text-align:right; color:var(--text-muted);">${t('Subtotal')}</td>
                     <td class="numeric">${subtotal.toFixed(2)} ${targetCurr}</td><td></td></tr>
-                <tr><td colspan="4" style="text-align:right; color:var(--text-muted);">${i18next.t('vatAmount')} (${vatPct}%)</td>
+                <tr><td colspan="4" style="text-align:right; color:var(--text-muted);">${t('VAT')} (${vatPct}%)</td>
                     <td class="numeric">${vatAmount.toFixed(2)} ${targetCurr}</td><td></td></tr>
-                <tr class="grand" style="font-weight:bold;"><td colspan="4" style="text-align:right;">${i18next.t('totalIncVat')}</td>
+                <tr class="grand" style="font-weight:bold;"><td colspan="4" style="text-align:right;">${t('TOTAL (Inc. VAT)')}</td>
                     <td class="numeric" style="color:var(--primary);">${total.toFixed(2)} ${targetCurr}</td><td></td></tr>
             `;
 
-            document.getElementById('print-date').innerText = `${i18next.t('dateLabel')}: ${new Date().toLocaleDateString()}`;
+            document.getElementById('print-date').innerText = `${t('Date')}: ${new Date().toLocaleDateString()}`;
             const meta = appState.meta || {};
             const metaLines = [];
-            if (meta.quoteNo) metaLines.push(`${i18next.t('quoteNoLabel')}: ${escapeHtml(meta.quoteNo)}`);
-            if (meta.validUntil) metaLines.push(`${i18next.t('validUntilLabel')}: ${escapeHtml(meta.validUntil)}`);
+            if (meta.quoteNo) metaLines.push(`${t('Quote #')}: ${escapeHtml(meta.quoteNo)}`);
+            if (meta.validUntil) metaLines.push(`${t('Valid Until')}: ${escapeHtml(meta.validUntil)}`);
             const pm = document.getElementById('print-meta'); if (pm) pm.innerHTML = metaLines.join('<br>');
-            const bt = document.getElementById('print-billto'); if (bt) bt.innerHTML = meta.client ? `<b>${i18next.t('billTo')}</b>${escapeHtml(meta.client)}` : '';
+            const bt = document.getElementById('print-billto'); if (bt) bt.innerHTML = meta.client ? `<b>${t('Bill To')}</b>${escapeHtml(meta.client)}` : '';
 
             renderRatesWarning();
         }
@@ -1507,21 +1463,21 @@
                 const lineNet = netUnit * qty;
                 subtotal += lineNet;
                 return {
-                    [i18next.t('thQty')]: qty,
-                    [i18next.t('thDesc')]: i.desc,
-                    [i18next.t('providerLabel')]: i.provider,
+                    [t('Qty')]: qty,
+                    [t('Description')]: i.desc,
+                    [t('Provider')]: i.provider,
                     "URL": i.link,
-                    [i18next.t('priceLabel')]: i.price,
-                    [i18next.t('currencyLabel')]: i.currency,
-                    [`${i18next.t('thUnit')} (${targetCurr})`]: +netUnit.toFixed(2),
-                    [`${i18next.t('thTotal')} (${targetCurr})`]: +lineNet.toFixed(2)
+                    [t('Price')]: i.price,
+                    [t('Currency')]: i.currency,
+                    [`${t('Unit (net)')} (${targetCurr})`]: +netUnit.toFixed(2),
+                    [`${t('Amount (net)')} (${targetCurr})`]: +lineNet.toFixed(2)
                 };
             });
             const vatAmount = subtotal * (vatPct/100);
             data.push({},
-                { [i18next.t('thDesc')]: i18next.t('subtotal'), [`${i18next.t('thTotal')} (${targetCurr})`]: +subtotal.toFixed(2) },
-                { [i18next.t('thDesc')]: `${i18next.t('vatAmount')} (${vatPct}%)`, [`${i18next.t('thTotal')} (${targetCurr})`]: +vatAmount.toFixed(2) },
-                { [i18next.t('thDesc')]: i18next.t('totalIncVat'), [`${i18next.t('thTotal')} (${targetCurr})`]: +(subtotal + vatAmount).toFixed(2) }
+                { [t('Description')]: t('Subtotal'), [`${t('Amount (net)')} (${targetCurr})`]: +subtotal.toFixed(2) },
+                { [t('Description')]: `${t('VAT')} (${vatPct}%)`, [`${t('Amount (net)')} (${targetCurr})`]: +vatAmount.toFixed(2) },
+                { [t('Description')]: t('TOTAL (Inc. VAT)'), [`${t('Amount (net)')} (${targetCurr})`]: +(subtotal + vatAmount).toFixed(2) }
             );
             const ws = XLSX.utils.json_to_sheet(data);
             const wb = XLSX.utils.book_new();
@@ -1566,10 +1522,10 @@
             doc.text(appState.config.orgName, 14, 20);
             doc.setFontSize(10);
             let hy = 28;
-            doc.text(`${i18next.t('dateLabel')}: ${new Date().toLocaleDateString()}`, 14, hy);
-            if (meta.quoteNo)    { hy += 6; doc.text(`${i18next.t('quoteNoLabel')}: ${meta.quoteNo}`, 14, hy); }
-            if (meta.validUntil) { hy += 6; doc.text(`${i18next.t('validUntilLabel')}: ${meta.validUntil}`, 14, hy); }
-            if (meta.client)     { hy += 6; doc.text(`${i18next.t('billTo')}: ${meta.client}`, 14, hy); }
+            doc.text(`${t('Date')}: ${new Date().toLocaleDateString()}`, 14, hy);
+            if (meta.quoteNo)    { hy += 6; doc.text(`${t('Quote #')}: ${meta.quoteNo}`, 14, hy); }
+            if (meta.validUntil) { hy += 6; doc.text(`${t('Valid Until')}: ${meta.validUntil}`, 14, hy); }
+            if (meta.client)     { hy += 6; doc.text(`${t('Bill To')}: ${meta.client}`, 14, hy); }
 
             if (appState.config.logoData) {
                 try { doc.addImage(appState.config.logoData, 'PNG', 168, 12, 26, 26 * (appState.config.logoAspect || 1)); } catch(e){}
@@ -1589,12 +1545,12 @@
             const total = subtotal + vatAmount;
 
             doc.autoTable({
-                head: [[i18next.t('thQty'), i18next.t('thDesc'), i18next.t('providerLabel'), "Link", i18next.t('thUnit'), i18next.t('thTotal')]],
+                head: [[t('Qty'), t('Description'), t('Provider'), "Link", t('Unit (net)'), t('Amount (net)')]],
                 body: body,
                 foot: [
-                    [{ content: i18next.t('subtotal'), colSpan: 5, styles: { halign: 'right' } }, `${subtotal.toFixed(2)} ${targetCurr}`],
-                    [{ content: `${i18next.t('vatAmount')} (${vatPct}%)`, colSpan: 5, styles: { halign: 'right' } }, `${vatAmount.toFixed(2)} ${targetCurr}`],
-                    [{ content: i18next.t('totalIncVat'), colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, { content: `${total.toFixed(2)} ${targetCurr}`, styles: { fontStyle: 'bold' } }]
+                    [{ content: t('Subtotal'), colSpan: 5, styles: { halign: 'right' } }, `${subtotal.toFixed(2)} ${targetCurr}`],
+                    [{ content: `${t('VAT')} (${vatPct}%)`, colSpan: 5, styles: { halign: 'right' } }, `${vatAmount.toFixed(2)} ${targetCurr}`],
+                    [{ content: t('TOTAL (Inc. VAT)'), colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, { content: `${total.toFixed(2)} ${targetCurr}`, styles: { fontStyle: 'bold' } }]
                 ],
                 startY: hy + 6,
                 styles: { font: fontUsed, fontSize: 9, overflow: 'linebreak' },
@@ -1614,10 +1570,10 @@
             const targetCurr = appState.config.targetCurrency;
             const vatPct = appState.config.vatRate;
             const meta = appState.meta || {};
-            let body = `${i18next.t('emailHeader')}\n\n`;
-            if (meta.client) body += `${i18next.t('billTo')}: ${meta.client}\n`;
-            if (meta.quoteNo) body += `${i18next.t('quoteNoLabel')}: ${meta.quoteNo}\n`;
-            if (meta.validUntil) body += `${i18next.t('validUntilLabel')}: ${meta.validUntil}\n`;
+            let body = `${t('Here is the quotation summary:')}\n\n`;
+            if (meta.client) body += `${t('Bill To')}: ${meta.client}\n`;
+            if (meta.quoteNo) body += `${t('Quote #')}: ${meta.quoteNo}\n`;
+            if (meta.validUntil) body += `${t('Valid Until')}: ${meta.validUntil}\n`;
             body += `\n`;
             let subtotal = 0;
             appState.items.forEach(i => {
@@ -1631,77 +1587,51 @@
                 if(i.link) body += `  ${i.link}\n`;
             });
             const vatAmount = subtotal * (vatPct/100);
-            body += `\n${i18next.t('subtotal')}: ${subtotal.toFixed(2)} ${targetCurr}`;
-            body += `\n${i18next.t('vatAmount')} (${vatPct}%): ${vatAmount.toFixed(2)} ${targetCurr}`;
-            body += `\n${i18next.t('totalIncVat')}: ${(subtotal + vatAmount).toFixed(2)} ${targetCurr}`;
+            body += `\n${t('Subtotal')}: ${subtotal.toFixed(2)} ${targetCurr}`;
+            body += `\n${t('VAT')} (${vatPct}%): ${vatAmount.toFixed(2)} ${targetCurr}`;
+            body += `\n${t('TOTAL (Inc. VAT)')}: ${(subtotal + vatAmount).toFixed(2)} ${targetCurr}`;
             const subject = `${appState.config.orgName} - Quote`;
             window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         }
 
-        // --- I18N ---
-        function setLang(code) {
-            i18next.changeLanguage(code, () => {
-                updateText();
-                renderTable();
-                setupUI();
+        // --- I18N glue (dictionaries + t()/applyStaticI18n live in i18n.js) ---
+        // A loaded config JSON may still ship a "dictionary": { es: { "English
+        // string": "translation", ... }, ... } keyed by language code; entries
+        // are keyed by the ENGLISH source string and merge on top of the
+        // built-in fleet dictionaries. "en" needs no dictionary — English
+        // strings ARE the keys.
+        function mergeCustomDictionary() {
+            if (!appState.customDictionary) return;
+            Object.keys(appState.customDictionary).forEach(lang => {
+                const code = (window.CarinoLang && CarinoLang.resolve(lang)) || lang;
+                if (code === 'en') return;
+                I18N[code] = Object.assign(I18N[code] || {}, appState.customDictionary[lang]);
             });
         }
 
-        function initI18n() {
-            const resources = {
-                en: { translation: {
-                    appTitle: "General Quotation", dropzoneTitle: "Load Config", dropzoneSub: "Drop JSON here or click",
-                    settingsTitle: "Global Settings", targetCurrency: "Target Currency", vatLabel: "VAT (%)",
-                    addItemTitle: "Item Details", catalogLabel: "Catalog", customItem: "Custom Item",
-                    browseCatalog: "Browse Catalog", searchCatalog: "Search products & services…", allItems: "All", noResults: "No matching items", prefillHint: "Click to fill the form; use + to add directly",
-                    descLabel: "Description", priceLabel: "Price", currencyLabel: "Currency", providerLabel: "Provider", linkLabel: "Link", notesLabel: "Notes", stripVatLabel: "Price includes VAT (Strip it)", qtyLabel: "Qty",
-                    btnAdd: "Add Item", btnUpdate: "Update Item", btnClear: "Clear", actionsTitle: "Actions & Export",
-                    btnExcel: "Excel", btnPdf: "PDF", btnImage: "Image", btnEmail: "Email", btnReset: "Reset All",
-                    thQty: "Qty", thDesc: "Description", thDetails: "Details", thUnit: "Unit (net)", thTotal: "Amount (net)", totalIncVat: "TOTAL (Inc. VAT)",
-                    configLoaded: "Configuration Loaded Successfully!", validationError: "Description and a price greater than 0 are required", confirmReset: "Delete all data?", emailHeader: "Here is the quotation summary:", editingMode: "Editing Item", quoteDetailsTitle: "Quotation", clientLabel: "Bill To (Client)", quoteNoLabel: "Quote #", validUntilLabel: "Valid Until", billTo: "Bill To", subtotal: "Subtotal", vatAmount: "VAT", dateLabel: "Date", incVatShort: "incl. VAT", ratesWarn: "Live exchange rates unavailable — converted amounts may be inaccurate."
-                }},
-                es: { translation: {
-                    appTitle: "Cotización General", dropzoneTitle: "Cargar Config", dropzoneSub: "Arrastra JSON aquí o clic",
-                    settingsTitle: "Configuración Global", targetCurrency: "Moneda Destino", vatLabel: "IVA (%)",
-                    addItemTitle: "Detalles del Ítem", catalogLabel: "Catálogo", customItem: "Ítem Personalizado",
-                    browseCatalog: "Explorar Catálogo", searchCatalog: "Buscar productos y servicios…", allItems: "Todos", noResults: "Sin coincidencias", prefillHint: "Clic para rellenar el formulario; usa + para agregar directamente",
-                    descLabel: "Descripción", priceLabel: "Precio", currencyLabel: "Moneda", providerLabel: "Proveedor", linkLabel: "Enlace", notesLabel: "Notas", stripVatLabel: "El precio incluye IVA (Desglosar)", qtyLabel: "Cant",
-                    btnAdd: "Agregar", btnUpdate: "Actualizar", btnClear: "Limpiar", actionsTitle: "Acciones y Exportar",
-                    btnExcel: "Excel", btnPdf: "PDF", btnImage: "Imagen", btnEmail: "Correo", btnReset: "Reiniciar",
-                    thQty: "Cant", thDesc: "Descripción", thDetails: "Detalles", thUnit: "Unit. (neto)", thTotal: "Importe (neto)", totalIncVat: "TOTAL (Con IVA)",
-                    configLoaded: "¡Configuración cargada!", validationError: "Descripción y un precio mayor a 0 son requeridos", confirmReset: "¿Borrar todos los datos?", emailHeader: "Aquí está el resumen:", editingMode: "Editando...", quoteDetailsTitle: "Cotización", clientLabel: "Facturar a (Cliente)", quoteNoLabel: "N.º Cotización", validUntilLabel: "Válido Hasta", billTo: "Facturar a", subtotal: "Subtotal", vatAmount: "IVA", dateLabel: "Fecha", incVatShort: "IVA incl.", ratesWarn: "Tipos de cambio no disponibles — los importes convertidos pueden ser inexactos."
-                }},
-                ja: { translation: {
-                    appTitle: "一般見積", dropzoneTitle: "設定をロード", dropzoneSub: "JSONをドロップまたはクリック",
-                    settingsTitle: "全体設定", targetCurrency: "見積通貨", vatLabel: "消費税 (%)",
-                    addItemTitle: "アイテム詳細", catalogLabel: "カタログ", customItem: "カスタムアイテム",
-                    browseCatalog: "カタログを見る", searchCatalog: "製品・サービスを検索…", allItems: "すべて", noResults: "該当なし", prefillHint: "クリックでフォームに入力、+ で直接追加",
-                    descLabel: "説明", priceLabel: "価格", currencyLabel: "通貨", providerLabel: "プロバイダー", linkLabel: "リンク", notesLabel: "備考", stripVatLabel: "税込価格 (税を抜く)", qtyLabel: "数量",
-                    btnAdd: "追加", btnUpdate: "更新", btnClear: "クリア", actionsTitle: "操作とエクスポート",
-                    btnExcel: "Excel", btnPdf: "PDF", btnImage: "画像", btnEmail: "メール", btnReset: "リセット",
-                    thQty: "数", thDesc: "説明", thDetails: "詳細", thUnit: "単価 (税抜)", thTotal: "金額 (税抜)", totalIncVat: "合計 (税込)",
-                    configLoaded: "設定がロードされました", validationError: "説明と0より大きい価格が必要です", confirmReset: "データを削除しますか？", emailHeader: "見積もり概要:", editingMode: "編集中", quoteDetailsTitle: "見積", clientLabel: "請求先 (顧客)", quoteNoLabel: "見積番号", validUntilLabel: "有効期限", billTo: "請求先", subtotal: "小計", vatAmount: "消費税", dateLabel: "日付", incVatShort: "税込", ratesWarn: "為替レートを取得できません — 換算額が不正確な場合があります。"
-                }}
-            };
-
-            // Add custom dictionary logic
-            if(appState.customDictionary) {
-                Object.keys(appState.customDictionary).forEach(lang => {
-                    if(resources[lang]) Object.assign(resources[lang].translation, appState.customDictionary[lang]);
-                    else resources[lang] = { translation: appState.customDictionary[lang] };
-                });
-            }
-
-            i18next.use(i18nextBrowserLanguageDetector).init({ fallbackLng: 'en', resources: resources }, () => updateText());
+        function updatePlaceholders() {
+            document.getElementById('description').placeholder = t('Description');
+            document.getElementById('notes').placeholder = t('Notes');
+            document.getElementById('cat-search').placeholder = t('Search products & services…');
         }
 
-        function updateText() {
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                el.innerText = i18next.t(el.getAttribute('data-i18n'));
-            });
-            document.getElementById('description').placeholder = i18next.t('descLabel');
-            document.getElementById('notes').placeholder = i18next.t('notesLabel');
+        // Dropzone title flips between 'Load Config' and 'Config Loaded';
+        // track the key so applyStaticI18n keeps the right one on lang change.
+        function setDzTitle(key) {
+            const el = document.getElementById('dz-title');
+            el.dataset.i18nKey = key;
+            el.textContent = t(key);
         }
+
+        // i18n.js calls this after every applyStaticI18n() pass (initial load
+        // and each carino:langchange) so dynamic surfaces re-render translated.
+        window.onLanguageApplied = () => {
+            updatePlaceholders();
+            document.getElementById('print-org-name').innerText = t(appState.config.orgName);
+            renderTable();
+            const modal = document.getElementById('cat-modal');
+            if (modal && modal.classList.contains('open')) renderCatalog();
+        };
     </script>
   <!-- Handy bar: floating quick-action pill, shown on mobile only (see CSS).
        Buttons call the same handlers as the sidebar; ☰ opens the form drawer. -->
@@ -1712,12 +1642,12 @@
 
   <script src="carino-navbar.js" data-app="Quote" defer></script>
   <script src="carino-lang.js" defer></script>
+  <script src="i18n.js" defer></script>
   <script>
   /* Mobile: the sidebar becomes an off-canvas drawer opened from the floating
-     handy bar's ☰. The language switch (relocated into the navbar as .cn-actions)
-     folds into a section at the top of that drawer. Everything reverses above
-     900px, where the handy bar is hidden and options live in the sidebar/navbar.
-     Moved nodes are the real ones, so their handlers survive. */
+     handy bar's ☰. Everything reverses above 900px, where the handy bar is
+     hidden and options live in the sidebar. (The language switcher is the
+     fleet-wide one injected into the navbar by carino-lang.js.) */
   (function () {
     'use strict';
     var MQ = window.matchMedia('(max-width: 900px)');
@@ -1727,12 +1657,6 @@
     var scrim = document.createElement('div');
     scrim.id = 'gqScrim';
     document.body.appendChild(scrim);
-
-    var actions = document.createElement('div');
-    actions.id = 'gqDrawerActions';
-    actions.innerHTML = '<div class="da-title">Language</div><div id="gqActionsSlot"></div>';
-    sidebar.insertBefore(actions, sidebar.firstChild);
-    var slot = actions.querySelector('#gqActionsSlot');
 
     function open() { sidebar.classList.add('open'); scrim.classList.add('open'); document.body.classList.add('gq-lock'); }
     function close() { sidebar.classList.remove('open'); scrim.classList.remove('open'); document.body.classList.remove('gq-lock'); }
@@ -1744,30 +1668,10 @@
     var menu = document.getElementById('handyMenu');
     if (menu) menu.addEventListener('click', function (e) { e.stopPropagation(); toggle(); });
 
-    // Move the language switch between the navbar (desktop) and the drawer top
-    // (mobile) as the breakpoint flips.
-    function syncActions() {
-      var nav = document.getElementById('carinoNav');
-      var lang = document.querySelector('.cn-actions'); // #lang-container, relocated by carino-navbar.js
-      if (!lang) return;
-      if (MQ.matches) {
-        if (lang.parentNode !== slot) slot.appendChild(lang);
-      } else {
-        var right = nav && nav.querySelector('.cn-right');
-        if (right && lang.parentNode !== right) right.insertBefore(lang, right.querySelector('.social-row'));
-        close();
-      }
-    }
-
-    if (!syncActions()) {
-      // navbar may not have mounted yet; retry until .cn-actions appears
-      var n = 0, iv = setInterval(function () {
-        syncActions();
-        if (document.querySelector('.cn-actions') || ++n > 40) clearInterval(iv);
-      }, 50);
-    }
-    if (MQ.addEventListener) MQ.addEventListener('change', syncActions);
-    else if (MQ.addListener) MQ.addListener(syncActions);
+    // Close the drawer when the layout flips back to desktop.
+    function onBreak() { if (!MQ.matches) close(); }
+    if (MQ.addEventListener) MQ.addEventListener('change', onBreak);
+    else if (MQ.addListener) MQ.addListener(onBreak);
   })();
   </script>
 </body>
