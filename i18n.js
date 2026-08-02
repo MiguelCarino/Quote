@@ -10,6 +10,10 @@
 
 const I18N = {
     es: {
+        'Late shift.': 'Turno nocturno.',
+        'Good morning.': 'Buenos días.',
+        'Good afternoon.': 'Buenas tardes.',
+        'Good evening.': 'Buenas noches.',
         // Sidebar chrome
         'Global Settings': 'Configuración global',
         'Target Currency': 'Moneda de destino',
@@ -67,6 +71,10 @@ const I18N = {
         'Live exchange rates unavailable — converted amounts may be inaccurate.': 'Tipos de cambio no disponibles: los importes convertidos pueden ser inexactos.',
     },
     'pt-BR': {
+        'Late shift.': 'Turno da noite.',
+        'Good morning.': 'Bom dia.',
+        'Good afternoon.': 'Boa tarde.',
+        'Good evening.': 'Boa noite.',
         'Global Settings': 'Configurações globais',
         'Target Currency': 'Moeda de destino',
         'VAT (%)': 'IVA (%)',
@@ -120,6 +128,10 @@ const I18N = {
         'Live exchange rates unavailable — converted amounts may be inaccurate.': 'Câmbio ao vivo indisponível: os valores convertidos podem estar imprecisos.',
     },
     ja: {
+        'Late shift.': '夜勤お疲れさま。',
+        'Good morning.': 'おはようございます。',
+        'Good afternoon.': 'こんにちは。',
+        'Good evening.': 'こんばんは。',
         'Global Settings': '全体設定',
         'Target Currency': '見積通貨',
         'VAT (%)': '消費税 (%)',
@@ -173,6 +185,10 @@ const I18N = {
         'Live exchange rates unavailable — converted amounts may be inaccurate.': '為替レートを取得できません — 換算額が不正確な場合があります。',
     },
     ru: {
+        'Late shift.': 'Ночная смена.',
+        'Good morning.': 'Доброе утро.',
+        'Good afternoon.': 'Добрый день.',
+        'Good evening.': 'Добрый вечер.',
         'Global Settings': 'Общие настройки',
         'Target Currency': 'Целевая валюта',
         'VAT (%)': 'НДС (%)',
