@@ -108,6 +108,12 @@
 
         .rates-warn { background: rgba(234,179,8,0.08); border: 1px solid rgba(234,179,8,0.5); color: var(--accent); font-family: var(--mono); font-size: 0.68rem; line-height: 1.5; padding: 8px 10px; border-radius: 6px; }
         .paper .print-meta { font-family: var(--mono); font-size: 0.72rem; color: var(--text-muted); margin-top: 8px; line-height: 1.6; }
+        /* Issuer tax details, handed over by Fiscal (fiscal.carino.systems).
+           A quotation that becomes an invoice needs the issuer's tax number on
+           it, and retyping an RFC is exactly the error this avoids. */
+        .paper .print-fiscal { font-family: var(--mono); font-size: 0.7rem; color: var(--text-muted);
+            line-height: 1.6; margin: 6px 0 0; }
+        .paper .print-fiscal b { color: #1f2937; font-weight: 600; }
         .paper .print-billto { font-size: 0.9rem; color: #1f2937; margin: 0 0 6px; }
         .paper .print-billto b { font-family: var(--mono); font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); display: block; margin-bottom: 2px; }
         .paper tfoot td { border-bottom: none; padding: 6px 8px; }
@@ -320,6 +326,7 @@
                 <div class="print-header">
                     <div>
                         <h1 id="print-org-name" style="margin:0; color:var(--primary); font-size: 1.9rem;">General Quotation</h1>
+                        <div id="print-fiscal" class="print-fiscal"></div>
                         <p id="print-date" style="margin:5px 0 0 0; color: var(--text-muted); font-size: 0.9rem;"></p>
                     </div>
                     <div style="text-align:right;">
@@ -918,7 +925,8 @@
                 logo: "logo.webp",
                 url: "https://carino.systems",
                 targetCurrency: "USD",
-                vatRate: 16
+                vatRate: 16,
+                fiscal: null
             },
             theme: { primary: "#eab308", background: "#050505" },
             availableCurrencies: DEFAULT_CURRENCIES,
@@ -947,6 +955,7 @@
             updatePlaceholders();
             await fetchRates();
             renderTable();
+            receiveFiscalCard();
 
             // Close the catalog browser on Escape.
             document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeCatalog(); });
@@ -991,6 +1000,37 @@
                 if(parsed.catalog && parsed.catalog.length > 0) appState.catalog = parsed.catalog;
                 if(parsed.meta) appState.meta = { ...appState.meta, ...parsed.meta };
             }
+        }
+
+        /* ---- Fiscal handoff ---------------------------------------------
+           fiscal.carino.systems opens this page at #carino-bridge and posts one
+           JSON file holding the issuer's tax card. A quotation that turns into
+           an invoice needs that tax number on it, and retyping an RFC by hand is
+           precisely the error worth removing. Only Fiscal is trusted; anything
+           else is ignored rather than prompted about, because this page has no
+           business taking tax data from a stranger. */
+        function receiveFiscalCard() {
+            if (!window.CarinoBridge) return;
+            window.CarinoBridge.receive({
+                allow: ['https://fiscal.carino.systems', 'http://localhost:8347'],
+                otherwise: 'deny',
+                onFiles: async (files) => {
+                    const file = files.find(f => /\.json$/i.test(f.name)) || files[0];
+                    if (!file) return;
+                    let card;
+                    try { card = JSON.parse(await file.text()); } catch (_) { return; }
+                    if (!card || card.app !== 'carino-fiscal' || !Array.isArray(card.lines)) return;
+
+                    appState.config.fiscal = {
+                        label: card.label || '',
+                        country: card.country || card.iso || '',
+                        lines: card.lines,
+                    };
+                    saveState();
+                    renderTable();
+                    catToast('✓ ' + t('Tax details added from Fiscal'));
+                },
+            });
         }
 
         function saveState() {
@@ -1446,6 +1486,14 @@
             const pm = document.getElementById('print-meta'); if (pm) pm.innerHTML = metaLines.join('<br>');
             const bt = document.getElementById('print-billto'); if (bt) bt.innerHTML = meta.client ? `<b>${t('Bill To')}</b>${escapeHtml(meta.client)}` : '';
 
+            const pf = document.getElementById('print-fiscal');
+            if (pf) {
+                const fis = appState.config.fiscal;
+                pf.innerHTML = (fis && fis.lines && fis.lines.length)
+                    ? `<b>${escapeHtml(fis.label || fis.country || '')}</b><br>${fis.lines.map(escapeHtml).join(' &middot; ')}`
+                    : '';
+            }
+
             renderRatesWarning();
         }
 
@@ -1640,7 +1688,8 @@
     <button type="button" class="handy-btn" title="Browse catalog" aria-label="Browse catalog" onclick="openCatalog()">&#8862;</button>
   </div>
 
-  <script src="carino-navbar.js" data-app="Quote" data-repo="Quote" defer></script>
+  <script src="carino-bridge.js" defer></script>
+<script src="carino-navbar.js" data-app="Quote" data-repo="Quote" defer></script>
   <script src="carino-lang.js" defer></script>
   <script src="i18n.js" defer></script>
   <script>
