@@ -103,16 +103,27 @@
         .note { display: block; font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; font-style: italic; }
 
         .snapshot-mode .delete-col { display: none; }
-        .print-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; border-bottom: 2px solid var(--primary); padding-bottom: 18px; }
+        .print-header { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 28px; border-bottom: 2px solid var(--primary); padding-bottom: 18px; }
+        /* A flex item's min-content basis is its default floor, so a long legal
+           name in the left column would otherwise squeeze the quote number into
+           one character per line. */
+        .print-header > div:first-child { min-width: 0; }
+        .print-header > div:last-child { flex: 0 0 auto; }
         .print-logo { height: 56px; width: auto; }
 
         .rates-warn { background: rgba(234,179,8,0.08); border: 1px solid rgba(234,179,8,0.5); color: var(--accent); font-family: var(--mono); font-size: 0.68rem; line-height: 1.5; padding: 8px 10px; border-radius: 6px; }
+        .fiscal-box { margin-top: 12px; font-family: var(--mono); font-size: 0.7rem; line-height: 1.55; color: var(--text-muted); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; }
+        .fiscal-box b { color: var(--text-main); }
         .paper .print-meta { font-family: var(--mono); font-size: 0.72rem; color: var(--text-muted); margin-top: 8px; line-height: 1.6; }
         /* Issuer tax details, handed over by Fiscal (fiscal.carino.systems).
            A quotation that becomes an invoice needs the issuer's tax number on
            it, and retyping an RFC is exactly the error this avoids. */
         .paper .print-fiscal { font-family: var(--mono); font-size: 0.7rem; color: var(--text-muted);
-            line-height: 1.6; margin: 6px 0 0; }
+            line-height: 1.6; margin: -18px 0 14px; }
+        /* The block is rendered whether or not there is a card, and the negative
+           margin above pulls it up under the header rule — which on a quotation
+           with no card would be the header rule pulled onto Bill To. */
+        .paper .print-fiscal:empty { display: none; }
         .paper .print-fiscal b { color: #1f2937; font-weight: 600; }
         .paper .print-billto { font-size: 0.9rem; color: #1f2937; margin: 0 0 6px; }
         .paper .print-billto b { font-family: var(--mono); font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); display: block; margin-bottom: 2px; }
@@ -146,7 +157,9 @@
         .pc-add { margin-top: 6px; background: transparent; color: var(--accent); border: 1px solid var(--border); border-radius: 5px; font-family: var(--mono); font-weight: 700; font-size: 0.62rem; padding: 5px 8px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.04em; transition: 0.15s; }
         .pc-add:hover { background: var(--accent); color: #050505; border-color: var(--accent); }
         .cat-empty { color: var(--text-muted); font-family: var(--mono); font-size: 0.8rem; padding: 48px; text-align: center; grid-column: 1 / -1; }
-        .cat-toast { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--success); color: #052e13; font-family: var(--mono); font-weight: 700; font-size: 0.72rem; padding: 8px 16px; border-radius: 20px; opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; max-width: 80%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        /* Fixed, and above the catalog backdrop (z-index 1000): it lives outside
+           the modal so a handoff arriving with the catalog closed still shows. */
+        .cat-toast { position: fixed; bottom: 24px; left: 50%; z-index: 1100; transform: translateX(-50%) translateY(20px); background: var(--success); color: #052e13; font-family: var(--mono); font-weight: 700; font-size: 0.72rem; padding: 8px 16px; border-radius: 20px; opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; max-width: 80%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .cat-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
         @media (max-width: 640px) {
@@ -221,6 +234,7 @@
                         <input type="number" id="global-vat" value="16">
                     </div>
                 </div>
+                <div id="fiscal-box" class="fiscal-box" translate="no" style="display:none;"></div>
             </div>
 
             <div id="rates-warn" class="rates-warn" style="display:none;"></div>
@@ -326,7 +340,6 @@
                 <div class="print-header">
                     <div>
                         <h1 id="print-org-name" style="margin:0; color:var(--primary); font-size: 1.9rem;">General Quotation</h1>
-                        <div id="print-fiscal" class="print-fiscal"></div>
                         <p id="print-date" style="margin:5px 0 0 0; color: var(--text-muted); font-size: 0.9rem;"></p>
                     </div>
                     <div style="text-align:right;">
@@ -334,6 +347,7 @@
                         <div id="print-meta" class="print-meta"></div>
                     </div>
                 </div>
+                <div id="print-fiscal" class="print-fiscal"></div>
                 <div id="print-billto" class="print-billto"></div>
 
                 <table id="quoteTable">
@@ -367,9 +381,9 @@
                 <nav id="cat-rail" class="cat-rail"></nav>
                 <div id="cat-grid" class="cat-grid"></div>
             </div>
-            <div id="cat-toast" class="cat-toast"></div>
         </div>
     </div>
+    <div id="cat-toast" class="cat-toast" translate="no" role="status" aria-live="polite"></div>
 
 <script>
         // --- 1. DEFAULT EMBEDDED CONFIGURATION ---
@@ -953,9 +967,14 @@
             mergeCustomDictionary();
             setupUI();
             updatePlaceholders();
+            // Armed before the rates fetch, never after: a sender is already
+            // holding a payload it cannot deliver until this listener exists, and
+            // a stalled rates host must not cost it the handoff. A card that lands
+            // during the await is re-rendered by the renderTable() below, so it is
+            // never left showing unconverted totals.
+            receiveFiscalCard();
             await fetchRates();
             renderTable();
-            receiveFiscalCard();
 
             // Close the catalog browser on Escape.
             document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeCatalog(); });
@@ -1009,17 +1028,54 @@
            precisely the error worth removing. Only Fiscal is trusted; anything
            else is ignored rather than prompted about, because this page has no
            business taking tax data from a stranger. */
+        // The card shape Fiscal speaks today. A newer Fiscal that changes it says
+        // so, and the two static sites deploy independently, so a mismatch has to
+        // read as "this Quote is too old" rather than as a card silently dropped.
+        const FISCAL_CARD_VERSION = 1;
+
+        // localStorage is rehydrated by loadState() without a schema, and an older
+        // or hand-edited quoteConfig can hold any shape, so every consumer of the
+        // fiscal block goes through here rather than trusting the field.
+        function fiscalCard() {
+            const f = appState.config.fiscal;
+            return (f && Array.isArray(f.lines) && f.lines.length) ? f : null;
+        }
+
         function receiveFiscalCard() {
             if (!window.CarinoBridge) return;
+            // Only on a page served locally, so the deployment at
+            // quote.carino.systems computes an allowlist of exactly one origin.
+            // Both spellings: `allow` doubles as the target list for the "ready"
+            // announcement, so an origin missing from it never even handshakes.
+            const local = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
             window.CarinoBridge.receive({
-                allow: ['https://fiscal.carino.systems', 'http://localhost:8347'],
+                allow: [
+                    'https://fiscal.carino.systems',
+                    ...(local ? ['http://localhost:8000', 'http://127.0.0.1:8000'] : []),
+                ],
                 otherwise: 'deny',
+                // Every path out of here is either the card taken or `false`,
+                // which is what the bridge acknowledges on: a gate that drops the
+                // card silently would leave Fiscal reporting a handoff that
+                // never happened.
                 onFiles: async (files) => {
                     const file = files.find(f => /\.json$/i.test(f.name)) || files[0];
-                    if (!file) return;
+                    if (!file) return false;
                     let card;
-                    try { card = JSON.parse(await file.text()); } catch (_) { return; }
-                    if (!card || card.app !== 'carino-fiscal' || !Array.isArray(card.lines)) return;
+                    try { card = JSON.parse(await file.text()); } catch (_) { return false; }
+                    if (!card || card.app !== 'carino-fiscal' || !Array.isArray(card.lines)) return false;
+                    if (+card.v > FISCAL_CARD_VERSION) {
+                        alert(t('This card comes from a newer Fiscal than this page understands'));
+                        return false;
+                    }
+                    // Fiscal knows whether a card is the user's own, a demo sample
+                    // or one previewed from someone else's link. Only the first
+                    // belongs on a quotation; an older Fiscal says nothing and is
+                    // taken at its word.
+                    if (card.provenance && card.provenance !== 'own') {
+                        alert(t('Only your own tax card can go on a quotation'));
+                        return false;
+                    }
 
                     appState.config.fiscal = {
                         label: card.label || '',
@@ -1028,9 +1084,45 @@
                     };
                     saveState();
                     renderTable();
-                    catToast('✓ ' + t('Tax details added from Fiscal'));
+                    renderFiscalBox();
+                    const named = appState.config.fiscal.label || appState.config.fiscal.country;
+                    catToast('✓ ' + t('Tax details added from Fiscal') + (named ? ' — ' + named : ''));
+                    // The toast lasts 1.3s and fires while the page is still
+                    // loading, so mark the block that actually changed as well.
+                    const pf = document.getElementById('print-fiscal');
+                    if (pf) {
+                        pf.scrollIntoView({ block: 'nearest' });
+                        pf.animate([
+                            { outline: '2px solid var(--primary)', outlineOffset: '3px' },
+                            { outline: '2px solid transparent', outlineOffset: '3px' },
+                        ], { duration: 2200 });
+                    }
                 },
             });
+        }
+
+        // A card arriving over the bridge is otherwise invisible and permanent:
+        // nothing renders it outside the paper, and the only way back was Reset
+        // All, which takes the items and the catalog with it.
+        function renderFiscalBox() {
+            const box = document.getElementById('fiscal-box');
+            if (!box) return;
+            const f = fiscalCard();
+            if (!f) { box.style.display = 'none'; box.innerHTML = ''; return; }
+            box.style.display = 'block';
+            box.innerHTML = `<button onclick="clearFiscal()" title="${t('Remove tax details')}"
+                    aria-label="${t('Remove tax details')}"
+                    style="float:right;background:none;border:none;color:var(--danger);cursor:pointer;font-size:0.8rem;line-height:1;">&#10005;</button>
+                <b>${escapeHtml(f.label || f.country || '')}</b>
+                <div>${f.lines.map(escapeHtml).join('<br>')}</div>`;
+        }
+
+        function clearFiscal() {
+            if (!confirm(t('Remove tax details from this quotation?'))) return;
+            appState.config.fiscal = null;
+            saveState();
+            renderTable();
+            renderFiscalBox();
         }
 
         function saveState() {
@@ -1100,6 +1192,7 @@
             if (qv) { qv.value = appState.meta.validUntil || ''; qv.oninput = (e) => { appState.meta.validUntil = e.target.value; saveState(); renderTable(); }; }
 
             loadLogoData();
+            renderFiscalBox();
         }
 
         function setupDropzone() {
@@ -1366,9 +1459,14 @@
                     renderRatesWarning(); return;
                 }
             } catch (e) {}
+            // A blackholed or captive-portal-intercepted host would otherwise hang
+            // on the browser's own connection timeout; the catch below already
+            // knows how to fall back, so an abort simply lands there sooner.
+            const ctl = new AbortController();
+            const kill = setTimeout(() => ctl.abort(), 8000);
             try {
                 // Frankfurter: free, CORS-open, ECB reference rates. rates[X] = X per 1 base.
-                const res = await fetch(`https://api.frankfurter.app/latest?from=${encodeURIComponent(base)}`);
+                const res = await fetch(`https://api.frankfurter.app/latest?from=${encodeURIComponent(base)}`, { signal: ctl.signal });
                 if (!res.ok) throw new Error('rate http ' + res.status);
                 const data = await res.json();
                 appState.rates = data.rates || {};
@@ -1381,7 +1479,7 @@
                 try { cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); } catch (_) {}
                 if (cached && cached.base === base) { appState.rates = cached.rates; appState.ratesDate = cached.date; appState.ratesOk = true; }
                 else { appState.rates = {}; appState.ratesOk = false; }
-            }
+            } finally { clearTimeout(kill); }
             renderRatesWarning();
         }
 
@@ -1488,8 +1586,8 @@
 
             const pf = document.getElementById('print-fiscal');
             if (pf) {
-                const fis = appState.config.fiscal;
-                pf.innerHTML = (fis && fis.lines && fis.lines.length)
+                const fis = fiscalCard();
+                pf.innerHTML = fis
                     ? `<b>${escapeHtml(fis.label || fis.country || '')}</b><br>${fis.lines.map(escapeHtml).join(' &middot; ')}`
                     : '';
             }
@@ -1527,7 +1625,13 @@
                 { [t('Description')]: `${t('VAT')} (${vatPct}%)`, [`${t('Amount (net)')} (${targetCurr})`]: +vatAmount.toFixed(2) },
                 { [t('Description')]: t('TOTAL (Inc. VAT)'), [`${t('Amount (net)')} (${targetCurr})`]: +(subtotal + vatAmount).toFixed(2) }
             );
-            const ws = XLSX.utils.json_to_sheet(data);
+            // The issuer's tax block goes in as raw rows above the table, not as
+            // another data key: json_to_sheet derives its header from the union of
+            // the row keys, so a fiscal key would become a spurious first column.
+            const fis = fiscalCard();
+            const ws = XLSX.utils.json_to_sheet(data, fis ? { origin: 'A3' } : {});
+            if (fis) XLSX.utils.sheet_add_aoa(ws,
+                [[fis.label || fis.country || ''], [fis.lines.join(' · ')]], { origin: 'A1' });
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Quote");
             XLSX.writeFile(wb, `${appState.config.orgName}_Quote.xlsx`);
@@ -1546,6 +1650,16 @@
         }
 
         async function exportPDF() {
+            try { await buildPDF(); }
+            catch (e) {
+                // An onclick on an async function swallows every rejection, and a
+                // silently dead export button is worse than an ugly one.
+                console.error(e);
+                alert(t('PDF export failed') + ': ' + e.message);
+            }
+        }
+
+        async function buildPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
 
@@ -1554,12 +1668,26 @@
                 // Noto Sans JP — self-hosted full TTF (latin + kana + kanji) for jsPDF embedding.
                 const fontRes = await fetch('fonts/NotoSansJP-Regular.ttf');
                 if(fontRes.ok) {
-                    const fontBuf = await fontRes.arrayBuffer();
-                    doc.addFileToVFS("NotoSansJP.ttf", new Uint8Array(fontBuf));
+                    const bytes = new Uint8Array(await fontRes.arrayBuffer());
+                    // The VFS holds binary STRINGS, not byte arrays; hand it an
+                    // array and jsPDF registers a font it cannot measure, which
+                    // surfaces much later as autoTable dereferencing undefined.
+                    // Chunked because fromCharCode over 2.7M arguments overflows.
+                    let bin = '';
+                    for (let i = 0; i < bytes.length; i += 0x8000) {
+                        bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+                    }
+                    doc.addFileToVFS("NotoSansJP.ttf", bin);
                     doc.addFont("NotoSansJP.ttf", "NotoSansJP", "normal");
+                    doc.setFont("NotoSansJP", "normal");
+                    doc.getTextWidth("0");   // the TTF really parsed; throws here if not
                     fontUsed = "NotoSansJP";
                 }
-            } catch(e) { console.warn("Font load failed, fallback to Helvetica"); }
+            } catch(e) {
+                console.warn("Font load failed, fallback to Helvetica", e);
+                fontUsed = "helvetica";
+                doc.setFont("helvetica", "normal");
+            }
 
             const targetCurr = appState.config.targetCurrency;
             const vatPct = appState.config.vatRate;
@@ -1574,6 +1702,18 @@
             if (meta.quoteNo)    { hy += 6; doc.text(`${t('Quote #')}: ${meta.quoteNo}`, 14, hy); }
             if (meta.validUntil) { hy += 6; doc.text(`${t('Valid Until')}: ${meta.validUntil}`, 14, hy); }
             if (meta.client)     { hy += 6; doc.text(`${t('Bill To')}: ${meta.client}`, 14, hy); }
+
+            const fis = fiscalCard();
+            if (fis) {
+                // Wrapped, not placed: the lines are free-form strings from
+                // Fiscal, and an unwrapped razon social runs off the page and
+                // under the logo drawn at x=168.
+                doc.setFontSize(8);
+                const head = fis.label || fis.country || '';
+                doc.splitTextToSize((head ? head + ' — ' : '') + fis.lines.join('  ·  '), 150)
+                   .forEach(ln => { hy += 4.5; doc.text(ln, 14, hy); });
+                doc.setFontSize(10);
+            }
 
             if (appState.config.logoData) {
                 try { doc.addImage(appState.config.logoData, 'PNG', 168, 12, 26, 26 * (appState.config.logoAspect || 1)); } catch(e){}
@@ -1638,6 +1778,10 @@
             body += `\n${t('Subtotal')}: ${subtotal.toFixed(2)} ${targetCurr}`;
             body += `\n${t('VAT')} (${vatPct}%): ${vatAmount.toFixed(2)} ${targetCurr}`;
             body += `\n${t('TOTAL (Inc. VAT)')}: ${(subtotal + vatAmount).toFixed(2)} ${targetCurr}`;
+            // After the totals, where it reads as the issuer signing off rather
+            // than as part of the recipient's details.
+            const fis = fiscalCard();
+            if (fis) body += `\n\n${fis.label || fis.country || ''}\n${fis.lines.join('\n')}`;
             const subject = `${appState.config.orgName} - Quote`;
             window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         }
