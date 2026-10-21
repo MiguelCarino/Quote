@@ -3,6 +3,8 @@ A general quotation template to make simple quotes.
 https://quote.carino.systems
 ![image](https://github.com/user-attachments/assets/e7dac471-e41c-4077-9af0-b2cbe3f95f1c)
 
+![Quote](screenshot.webp)
+
 ## Licensing
 
 **Mine — GNU Affero General Public License v3.0 or later.** Everything in this

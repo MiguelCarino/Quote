@@ -13,7 +13,18 @@
     <meta property="og:title" content="Quote">
     <meta property="og:description" content="Make a clean price quote for your services or products and export it to PDF — free, in your browser, no account.">
     <meta property="og:url" content="https://quote.carino.systems/">
-    <meta property="og:image" content="https://quote.carino.systems/logo.webp">
+    <meta property="og:image" content="https://quote.carino.systems/og.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Quote">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="alternate" hreflang="en" href="https://quote.carino.systems/">
+    <link rel="alternate" hreflang="es" href="https://quote.carino.systems/?lang=es">
+    <link rel="alternate" hreflang="pt-BR" href="https://quote.carino.systems/?lang=pt-BR">
+    <link rel="alternate" hreflang="ja" href="https://quote.carino.systems/?lang=ja">
+    <link rel="alternate" hreflang="ru" href="https://quote.carino.systems/?lang=ru">
+    <link rel="alternate" hreflang="x-default" href="https://quote.carino.systems/">
+    <script type="application/json" id="carino-head-i18n">{"es": {"title": "Hacer cotizaciones gratis — plantilla a PDF | Carino", "desc": "Haz una cotización limpia de tus servicios o productos y expórtala a PDF: gratis, en tu navegador y sin cuenta."}, "pt-BR": {"title": "Gerador de orçamentos — modelo grátis em PDF | Carino", "desc": "Faça um orçamento limpo dos seus serviços ou produtos e exporte em PDF — grátis, no navegador, sem conta."}, "ja": {"title": "見積書作成 無料テンプレート PDF出力 | Carino", "desc": "サービスや商品のシンプルな見積書を作成してPDFで書き出し。無料、ブラウザで、アカウント不要。"}, "ru": {"title": "Коммерческое предложение — бесплатный шаблон в PDF | Carino", "desc": "Составьте аккуратное коммерческое предложение на услуги или товары и сохраните его в PDF — бесплатно, в браузере, без регистрации."}}</script>
     <script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "Quote", "url": "https://quote.carino.systems/", "description": "Make a clean price quote for your services or products and export it to PDF — free, in your browser, no account.", "operatingSystem": "Any (runs in a web browser)", "isAccessibleForFree": true, "author": {"@type": "Person", "name": "Miguel Cariño", "url": "https://carino.systems/"}}</script>
     <!-- /carino:head -->
 
@@ -237,11 +248,11 @@
                 <div class="section-title" data-i18n>Global Settings</div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label data-i18n>Target Currency</label>
+                        <label for="global-currency" data-i18n>Target Currency</label>
                         <select id="global-currency" class="dynamic-currency"></select>
                     </div>
                     <div class="form-group">
-                        <label data-i18n>VAT (%)</label>
+                        <label for="global-vat" data-i18n>VAT (%)</label>
                         <input type="number" id="global-vat" value="16">
                     </div>
                 </div>
@@ -253,16 +264,16 @@
             <div>
                 <div class="section-title" data-i18n>Quotation</div>
                 <div class="form-group" style="margin-bottom:12px;">
-                    <label data-i18n>Bill To (Client)</label>
+                    <label for="q-client" data-i18n>Bill To (Client)</label>
                     <input type="text" id="q-client" translate="no">
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label data-i18n>Quote #</label>
+                        <label for="q-number" data-i18n>Quote #</label>
                         <input type="text" id="q-number">
                     </div>
                     <div class="form-group">
-                        <label data-i18n>Valid Until</label>
+                        <label for="q-valid" data-i18n>Valid Until</label>
                         <input type="date" id="q-valid">
                     </div>
                 </div>
@@ -288,15 +299,15 @@
 
                 <div class="form-row">
                     <div class="form-group" style="flex: 0 0 70px;">
-                        <label data-i18n>Qty</label>
+                        <label for="quantity" data-i18n>Qty</label>
                         <input type="number" id="quantity" value="1" min="1">
                     </div>
                     <div class="form-group" style="flex: 1.5;">
-                        <label data-i18n>Price</label>
+                        <label for="price" data-i18n>Price</label>
                         <input type="number" id="price" step="0.01">
                     </div>
                     <div class="form-group">
-                        <label data-i18n>Currency</label>
+                        <label for="item-currency" data-i18n>Currency</label>
                         <select id="item-currency" class="dynamic-currency"></select>
                     </div>
                 </div>
@@ -308,11 +319,11 @@
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label data-i18n>Provider</label>
+                        <label for="provider" data-i18n>Provider</label>
                         <input type="text" id="provider">
                     </div>
                     <div class="form-group">
-                        <label data-i18n>Link</label>
+                        <label for="link" data-i18n>Link</label>
                         <input type="text" id="link">
                     </div>
                 </div>
