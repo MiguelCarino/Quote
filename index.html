@@ -33,99 +33,68 @@
     <script src="vendor/jspdf.plugin.autotable.min.js"></script>
     <script src="vendor/html2canvas.min.js"></script>
 <link rel="stylesheet" href="fonts/carino-fonts.css">
+    <link rel="stylesheet" href="carino-ui.css">
 
     <style>
-        :root {
-            --accent: #eab308;            /* Sharp Gold */
-            --primary: #eab308;           /* alias (JSON theme may override) */
-            --primary-hover: #fbbf24;
-            --bg-body: #050505;
-            --bg-surface: #0b0b0b;
-            --bg-elev: #0d0d0d;
-            --text-main: #fff;
-            --text-muted: #a3a3a3;
-            --border: #262626;
-            --success: #22c55e;
-            --danger: #ef4444;
-            --warning: #eab308;
-            --sans: 'IBM Plex Sans', 'Noto Sans JP', system-ui, -apple-system, sans-serif;
-            --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-            --display: 'Red Hat Display', var(--sans);
-        }
+        /* Tokens and components come from carino-ui.css; this sheet only adds
+           what is Quote's own. The workspace fills the window under the
+           navbar, and the form rail and the preview scroll on their own. */
+        body { height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+        .ws { flex: 1; min-height: 0; }
+        [hidden] { display: none !important; }
 
-        * { box-sizing: border-box; }
-        body { font-family: var(--sans); margin: 0; background: var(--bg-body); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; }
-
-        .main-container { display: flex; flex: 1; overflow: hidden; }
-
-        .sidebar {
-            width: 380px; background: var(--bg-surface); border-right: 1px solid var(--border);
-            padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 22px;
-        }
-
-        .dropzone {
-            border: 2px dashed var(--border); border-radius: 8px; padding: 20px;
-            text-align: center; cursor: pointer; transition: all 0.2s; background: var(--bg-elev);
-        }
-        .dropzone:hover, .dropzone.dragover { border-color: var(--accent); background: rgba(234,179,8,0.05); }
-        .dropzone.success { border-color: var(--success); background: rgba(34,197,94,0.06); }
-        .dropzone p { margin: 6px 0 0; font-family: var(--mono); font-size: 0.7rem; color: var(--text-muted); pointer-events: none; }
-        .dropzone strong { color: var(--accent); pointer-events: none; font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.03em; }
-        .dropzone.success strong { color: var(--success); }
-
-        .section-title { font-family: var(--mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); font-weight: 700; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+        .section-title { font-family: var(--mono); font-size: var(--fs-label); text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-sec); font-weight: 700; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
 
         .form-row { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
-        .form-group { flex: 1; display: flex; flex-direction: column; min-width: 100px; }
-
-        label { font-family: var(--mono); font-size: 0.64rem; font-weight: 500; color: var(--text-muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em; }
-        input, select {
-            padding: 9px 10px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 6px;
-            font-size: 0.85rem; font-family: var(--mono); color: var(--text-main); transition: border-color 0.15s; width: 100%; box-sizing: border-box;
-        }
-        input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(234,179,8,0.12); }
-        select option { background: var(--bg-elev); color: #fff; }
-        input[type=checkbox] { width: auto; accent-color: var(--accent); vertical-align: middle; }
+        .form-group { flex: 1; display: flex; flex-direction: column; min-width: 90px; }
+        .form-group label, .check-row label { font-family: var(--mono); font-size: var(--fs-micro); color: var(--text-muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.1em; }
+        .check-row { display: flex; align-items: center; gap: 8px; margin-bottom: 15px; }
+        .check-row label { margin: 0; }
+        .check-row input { accent-color: var(--accent); width: 15px; height: 15px; }
+        input[type=date].input { color-scheme: dark; }
 
         .edit-indicator {
             display: none; background: rgba(234,179,8,0.08); border: 1px solid rgba(234,179,8,0.5); color: var(--accent);
-            padding: 8px 10px; border-radius: 6px; font-family: var(--mono); font-size: 0.72rem; margin-bottom: 12px;
+            padding: 8px 10px; border-radius: 6px; font-family: var(--mono); font-size: var(--fs-sm); margin-bottom: 12px;
             align-items: center; justify-content: space-between;
         }
+        .btn-block { width: 100%; justify-content: center; }
+        .form-row > .btn { flex: 1; justify-content: center; }
+        .btn-danger { border-color: rgba(239,68,68,0.5); color: var(--err); }
+        .btn-danger:hover { border-color: var(--err); color: var(--err); background: rgba(239,68,68,0.08); }
 
-        .btn { padding: 10px; border: none; border-radius: 6px; font-family: var(--mono); font-weight: 700; cursor: pointer; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; transition: all 0.15s; text-align: center; }
-        .btn-primary { background: var(--accent); color: #050505; width: 100%; }
-        .btn-primary:hover { background: var(--primary-hover); box-shadow: 0 4px 14px rgba(234,179,8,0.22); }
-        .btn-warning { background: var(--warning); color: #050505; width: 100%; }
-        .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text-main); width: 100%; }
-        .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+        .rates-warn { margin: 0; }
+        .fiscal-box { margin-top: 12px; font-family: var(--mono); font-size: var(--fs-label); line-height: 1.55; color: var(--text-sec); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; }
+        .fiscal-box b { color: var(--text); }
 
-        .export-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-        .btn-export { background: transparent; border: 1px solid var(--border); color: var(--text-muted); font-size: 0.66rem; display: flex; align-items: center; justify-content: center; gap: 5px; }
-        .btn-export:hover { border-color: var(--accent); color: var(--accent); background: rgba(234,179,8,0.05); }
 
-        .preview-area { flex: 1; padding: 40px; overflow-y: auto; display: flex; justify-content: center; align-items: flex-start; background: var(--bg-body); }
+        /* Export menu: every output in one navbar dropdown (Branding #workspace). */
+
+        /* The preview pane. A loaded config may set its background (theme.background). */
+        .ws-pane.preview-area { padding: 40px; display: flex; flex-direction: column; align-items: center; background: var(--q-page-bg, var(--bg)); }
+        .ws-pane.preview-area > * { flex-shrink: 0; }
+        .pane-toggle { align-self: flex-start; margin-bottom: 14px; }
 
         /* The printable quotation keeps its own LIGHT palette (scoped vars) so it
            prints/exports as a clean white document regardless of the dark chrome. */
         .paper {
             background: #ffffff; width: 100%; max-width: 900px; min-height: 800px; padding: 44px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-radius: 6px; color: #1f2937; font-family: var(--sans);
-            --border: #e5e7eb; --text-muted: #6b7280; --primary: #b45309; --text-main: #1f2937;
+            --pp-border: #e5e7eb; --pp-muted: #6b7280; --pp-primary: #b45309; --pp-ink: #1f2937;
         }
         .paper h1 { font-family: var(--display); font-weight: 900; }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th { text-align: left; padding: 12px 8px; border-bottom: 2px solid var(--border); color: var(--text-muted); font-family: var(--mono); font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.05em; }
-        td { padding: 12px 8px; border-bottom: 1px solid var(--border); vertical-align: top; font-size: 0.88rem; }
-        tbody tr:hover { background-color: #faf7ef; cursor: pointer; }
+        .paper table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .paper th { text-align: left; padding: 12px 8px; border-bottom: 2px solid var(--pp-border); color: var(--pp-muted); font-family: var(--mono); font-size: var(--fs-label); text-transform: uppercase; letter-spacing: 0.05em; }
+        .paper td { padding: 12px 8px; border-bottom: 1px solid var(--pp-border); vertical-align: top; font-size: var(--fs-sec); }
+        .paper tbody tr:hover { background-color: #faf7ef; cursor: pointer; }
         .numeric { text-align: right; font-family: var(--mono); }
         .center { text-align: center; }
-        .provider-link { color: var(--primary); text-decoration: none; font-size: 0.8rem; word-break: break-all; }
-        .note { display: block; font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; font-style: italic; }
+        .provider-link { color: var(--pp-primary); text-decoration: none; font-size: 0.8rem; word-break: break-all; }
+        .note { display: block; font-size: 0.78rem; color: var(--pp-muted); margin-top: 2px; font-style: italic; }
 
         .snapshot-mode .delete-col { display: none; }
-        .print-header { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 28px; border-bottom: 2px solid var(--primary); padding-bottom: 18px; }
+        .print-header { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 28px; border-bottom: 2px solid var(--pp-primary); padding-bottom: 18px; }
         /* A flex item's min-content basis is its default floor, so a long legal
            name in the left column would otherwise squeeze the quote number into
            one character per line. */
@@ -133,14 +102,11 @@
         .print-header > div:last-child { flex: 0 0 auto; }
         .print-logo { height: 56px; width: auto; }
 
-        .rates-warn { background: rgba(234,179,8,0.08); border: 1px solid rgba(234,179,8,0.5); color: var(--accent); font-family: var(--mono); font-size: 0.68rem; line-height: 1.5; padding: 8px 10px; border-radius: 6px; }
-        .fiscal-box { margin-top: 12px; font-family: var(--mono); font-size: 0.7rem; line-height: 1.55; color: var(--text-muted); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; }
-        .fiscal-box b { color: var(--text-main); }
-        .paper .print-meta { font-family: var(--mono); font-size: 0.72rem; color: var(--text-muted); margin-top: 8px; line-height: 1.6; }
+        .paper .print-meta { font-family: var(--mono); font-size: 0.72rem; color: var(--pp-muted); margin-top: 8px; line-height: 1.6; }
         /* Issuer tax details, handed over by Fiscal (fiscal.carino.systems).
            A quotation that becomes an invoice needs the issuer's tax number on
            it, and retyping an RFC is exactly the error this avoids. */
-        .paper .print-fiscal { font-family: var(--mono); font-size: 0.7rem; color: var(--text-muted);
+        .paper .print-fiscal { font-family: var(--mono); font-size: 0.7rem; color: var(--pp-muted);
             line-height: 1.6; margin: -18px 0 14px; }
         /* The block is rendered whether or not there is a card, and the negative
            margin above pulls it up under the header rule — which on a quotation
@@ -148,133 +114,104 @@
         .paper .print-fiscal:empty { display: none; }
         .paper .print-fiscal b { color: #1f2937; font-weight: 600; }
         .paper .print-billto { font-size: 0.9rem; color: #1f2937; margin: 0 0 6px; }
-        .paper .print-billto b { font-family: var(--mono); font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); display: block; margin-bottom: 2px; }
+        .paper .print-billto b { font-family: var(--mono); font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--pp-muted); display: block; margin-bottom: 2px; }
         .paper tfoot td { border-bottom: none; padding: 6px 8px; }
-        .paper tfoot .grand td { border-top: 2px solid var(--primary); font-size: 1.05rem; padding-top: 10px; }
+        .paper tfoot .grand td { border-top: 2px solid var(--pp-primary); font-size: 1.05rem; padding-top: 10px; }
 
         /* --- Catalog browser modal --- */
         .cat-modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.72); backdrop-filter: blur(2px); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 40px; }
         .cat-modal-backdrop.open { display: flex; }
-        .cat-modal { position: relative; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px; width: 100%; max-width: 980px; height: 82vh; max-height: 760px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 24px 70px rgba(0,0,0,0.65); }
+        .cat-modal { position: relative; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; width: 100%; max-width: 980px; height: 82vh; max-height: 760px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 24px 70px rgba(0,0,0,0.65); }
         .cat-head { display: flex; align-items: center; gap: 14px; padding: 16px 20px; border-bottom: 1px solid var(--border); }
         .cat-head h2 { font-family: var(--display); font-weight: 900; text-transform: uppercase; font-size: 0.95rem; margin: 0; letter-spacing: 0.05em; color: var(--accent); white-space: nowrap; }
         .cat-search { flex: 1; }
-        .cat-close { background: none; border: none; color: var(--text-muted); font-size: 1.5rem; line-height: 1; cursor: pointer; padding: 0 4px; }
+        .cat-close { background: none; border: none; color: var(--text-sec); font-size: 1.5rem; line-height: 1; cursor: pointer; padding: 0 4px; }
         .cat-close:hover { color: var(--accent); }
         .cat-body { display: flex; flex: 1; min-height: 0; }
         .cat-rail { width: 210px; flex-shrink: 0; border-right: 1px solid var(--border); overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 2px; }
-        .cat-rail button { text-align: left; background: none; border: none; color: var(--text-muted); font-family: var(--mono); font-size: 0.72rem; padding: 8px 10px; border-radius: 6px; cursor: pointer; display: flex; justify-content: space-between; gap: 8px; align-items: center; }
-        .cat-rail button:hover { color: var(--text-main); background: var(--bg-elev); }
+        .cat-rail button { text-align: left; background: none; border: none; color: var(--text-sec); font-family: var(--mono); font-size: 0.72rem; padding: 8px 10px; border-radius: 6px; cursor: pointer; display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+        .cat-rail button:hover { color: var(--text); background: var(--bg-elev); }
         .cat-rail button.active { background: var(--accent); color: #050505; font-weight: 700; }
         .cat-rail .count { opacity: 0.7; font-size: 0.66rem; }
         .cat-grid { flex: 1; overflow-y: auto; padding: 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 12px; align-content: start; }
         .prod-card { border: 1px solid var(--border); border-radius: 8px; padding: 12px 12px 10px; background: var(--bg-elev); cursor: pointer; display: flex; flex-direction: column; gap: 5px; transition: border-color 0.15s, transform 0.1s; }
         .prod-card:hover { border-color: var(--accent); transform: translateY(-1px); }
-        .prod-card .pc-prov { font-family: var(--mono); font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-        .prod-card .pc-desc { font-weight: 600; font-size: 0.82rem; line-height: 1.3; color: var(--text-main); }
-        .prod-card .pc-note { font-size: 0.7rem; color: var(--text-muted); line-height: 1.35; }
+        .prod-card .pc-prov { font-family: var(--mono); font-size: 0.6rem; color: var(--text-sec); text-transform: uppercase; letter-spacing: 0.05em; }
+        .prod-card .pc-desc { font-weight: 600; font-size: 0.82rem; line-height: 1.3; color: var(--text); }
+        .prod-card .pc-note { font-size: 0.7rem; color: var(--text-sec); line-height: 1.35; }
         .prod-card .pc-foot { margin-top: auto; padding-top: 4px; display: flex; justify-content: space-between; align-items: center; gap: 6px; }
         .prod-card .pc-price { font-family: var(--mono); font-weight: 700; color: var(--accent); font-size: 0.82rem; }
-        .pc-vat { font-family: var(--mono); font-size: 0.54rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 5px; border-radius: 4px; border: 1px solid var(--border); color: var(--text-muted); white-space: nowrap; }
+        .pc-vat { font-family: var(--mono); font-size: 0.54rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 5px; border-radius: 4px; border: 1px solid var(--border); color: var(--text-sec); white-space: nowrap; }
         .pc-add { margin-top: 6px; background: transparent; color: var(--accent); border: 1px solid var(--border); border-radius: 5px; font-family: var(--mono); font-weight: 700; font-size: 0.62rem; padding: 5px 8px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.04em; transition: 0.15s; }
         .pc-add:hover { background: var(--accent); color: #050505; border-color: var(--accent); }
-        .cat-empty { color: var(--text-muted); font-family: var(--mono); font-size: 0.8rem; padding: 48px; text-align: center; grid-column: 1 / -1; }
-        /* Fixed, and above the catalog backdrop (z-index 1000): it lives outside
-           the modal so a handoff arriving with the catalog closed still shows. */
-        .cat-toast { position: fixed; bottom: 24px; left: 50%; z-index: 1100; transform: translateX(-50%) translateY(20px); background: var(--success); color: #052e13; font-family: var(--mono); font-weight: 700; font-size: 0.72rem; padding: 8px 16px; border-radius: 20px; opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; max-width: 80%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .cat-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
+        .cat-empty { color: var(--text-sec); font-family: var(--mono); font-size: 0.8rem; padding: 48px; text-align: center; grid-column: 1 / -1; }
         @media (max-width: 640px) {
             .cat-modal-backdrop { padding: 12px; }
             .cat-modal { height: 90vh; }
             .cat-rail { width: 130px; }
         }
 
-        /* --- Mobile drawer + handy-bar helpers (hidden until the breakpoint) --- */
-        #gqScrim { display: none; }
-        .handy-bar { display: none; }
-
         @media (max-width: 900px) {
-            /* Sidebar → off-canvas drawer under the 60px navbar. */
-            .sidebar {
-                position: fixed; top: 60px; left: 0; bottom: 0;
-                width: min(90vw, 380px); z-index: 2147482000;
-                transform: translateX(-100%); transition: transform 0.25s ease;
-                box-shadow: 0 0 44px rgba(0, 0, 0, 0.6);
-            }
-            .sidebar.open { transform: translateX(0); }
-
-            #gqScrim {
-                display: block; position: fixed; inset: 60px 0 0 0;
-                background: rgba(0, 0, 0, 0.55); opacity: 0; pointer-events: none;
-                transition: opacity 0.25s ease; z-index: 2147481000;
-            }
-            #gqScrim.open { opacity: 1; pointer-events: auto; }
-
-            .preview-area { padding: 20px; }
+            /* The drawer starts under the navbar, which sits above it. */
+            .ws-rail { top: var(--nav-h); }
+            .ws-pane.preview-area { padding: 18px 16px; }
             .form-row { flex-direction: column; }
-
-            /* --- Handy bar: a floating quick-action pill, mobile only ---
-               Holds the actions you reach for without opening the form drawer:
-               open form (☰), browse catalog, add item, then the four exports.
-               It hides while the drawer is open so it never overlaps the form. */
-            .handy-bar {
-                display: flex; align-items: center; gap: 5px;
-                position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%);
-                z-index: 50; padding: 6px;
-                background: rgba(13, 13, 13, 0.92); border: 1px solid var(--border);
-                border-radius: 12px; box-shadow: 0 14px 38px rgba(0, 0, 0, 0.6);
-                -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
-                max-width: calc(100vw - 24px);
-            }
-            .handy-bar .handy-btn {
-                width: 38px; height: 38px; flex-shrink: 0;
-                display: flex; align-items: center; justify-content: center;
-                background: transparent; border: 1px solid transparent; border-radius: 8px;
-                color: var(--text-main); font-size: 1.05rem; line-height: 1; cursor: pointer; transition: 0.15s;
-            }
-            .handy-bar .handy-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(234,179,8,0.08); }
-            .handy-bar .handy-div { width: 1px; height: 22px; background: var(--border); margin: 0 2px; flex-shrink: 0; }
-            body.gq-lock .handy-bar { display: none; } /* out of the way while the drawer is open */
         }
     </style>
 </head>
 <body>
 
-    <div class="main-container">
-        <aside class="sidebar">
+    <div class="nav-actions" data-carino-actions>
+        <div class="cs-menu">
+            <button type="button" class="cs-btn primary cs-menu-btn" id="exportMenuBtn" data-priority="1" aria-haspopup="true" aria-expanded="false"><span data-i18n>Export</span> <span class="cs-caret">▾</span></button>
+            <div class="cs-menu-panel" id="exportMenu" role="menu" aria-labelledby="exportMenuBtn" hidden>
+                <button type="button" class="cs-menu-item q-out" role="menuitem" onclick="exportPDF()"><span>📄</span> <span data-i18n>PDF</span></button>
+                <button type="button" class="cs-menu-item q-out" role="menuitem" onclick="exportXLSX()"><span>📊</span> <span data-i18n>Excel</span> <span class="cs-menu-note">.xlsx</span></button>
+                <button type="button" class="cs-menu-item q-out" role="menuitem" onclick="exportImage()"><span>🖼️</span> <span data-i18n>Image</span> <span class="cs-menu-note">.png</span></button>
+                <button type="button" class="cs-menu-item q-out" role="menuitem" onclick="sendEmail()"><span>📧</span> <span data-i18n>Email</span></button>
+                <div class="cs-menu-div"></div>
+                <button type="button" class="cs-menu-item" role="menuitem" onclick="document.getElementById('config-input').click()"><span>📂</span> <span data-i18n>Load config…</span> <span class="cs-menu-note">.json</span></button>
+                <div class="cs-menu-div"></div>
+                <button type="button" class="cs-menu-item danger" role="menuitem" onclick="resetAll()"><span data-i18n>Reset All</span></button>
+            </div>
+        </div>
+        <input type="file" id="config-input" accept=".json" hidden>
+    </div>
+
+    <div class="ws">
+        <aside class="ws-rail">
 
             <div>
                 <div class="section-title" data-i18n>Global Settings</div>
                 <div class="form-row">
                     <div class="form-group">
                         <label for="global-currency" data-i18n>Target Currency</label>
-                        <select id="global-currency" class="dynamic-currency"></select>
+                        <select id="global-currency" class="select dynamic-currency"></select>
                     </div>
                     <div class="form-group">
                         <label for="global-vat" data-i18n>VAT (%)</label>
-                        <input type="number" id="global-vat" value="16">
+                        <input class="input" type="number" id="global-vat" value="16">
                     </div>
                 </div>
                 <div id="fiscal-box" class="fiscal-box" translate="no" style="display:none;"></div>
             </div>
 
-            <div id="rates-warn" class="rates-warn" style="display:none;"></div>
+            <div id="rates-warn" class="alert warn rates-warn" style="display:none;"></div>
 
             <div>
                 <div class="section-title" data-i18n>Quotation</div>
                 <div class="form-group" style="margin-bottom:12px;">
                     <label for="q-client" data-i18n>Bill To (Client)</label>
-                    <input type="text" id="q-client" translate="no">
+                    <input class="input" type="text" id="q-client" translate="no">
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label for="q-number" data-i18n>Quote #</label>
-                        <input type="text" id="q-number">
+                        <input class="input" type="text" id="q-number">
                     </div>
                     <div class="form-group">
                         <label for="q-valid" data-i18n>Valid Until</label>
-                        <input type="date" id="q-valid">
+                        <input class="input" type="date" id="q-valid">
                     </div>
                 </div>
             </div>
@@ -289,30 +226,30 @@
 
                 <div class="form-group" style="margin-bottom: 12px;">
                     <label data-i18n>Catalog</label>
-                    <button type="button" class="btn btn-primary" onclick="openCatalog()" style="display:flex;align-items:center;justify-content:center;gap:6px;">&#8862; <span data-i18n>Browse Catalog</span></button>
+                    <button type="button" class="btn btn-primary btn-block" onclick="openCatalog()">&#8862; <span data-i18n>Browse Catalog</span></button>
                 </div>
 
                 <div class="form-group" style="margin-bottom: 12px;">
                     <label data-i18n>Description</label>
-                    <input type="text" id="description">
+                    <input class="input" type="text" id="description">
                 </div>
 
                 <div class="form-row">
                     <div class="form-group" style="flex: 0 0 70px;">
                         <label for="quantity" data-i18n>Qty</label>
-                        <input type="number" id="quantity" value="1" min="1">
+                        <input class="input" type="number" id="quantity" value="1" min="1">
                     </div>
                     <div class="form-group" style="flex: 1.5;">
                         <label for="price" data-i18n>Price</label>
-                        <input type="number" id="price" step="0.01">
+                        <input class="input" type="number" id="price" step="0.01">
                     </div>
                     <div class="form-group">
                         <label for="item-currency" data-i18n>Currency</label>
-                        <select id="item-currency" class="dynamic-currency"></select>
+                        <select id="item-currency" class="select dynamic-currency"></select>
                     </div>
                 </div>
 
-                <div style="align-items: center; gap: 8px; margin-bottom: 15px;">
+                <div class="check-row">
                     <input type="checkbox" id="remove-vat">
                     <label for="remove-vat" data-i18n>Price includes VAT (Strip it)</label>
                 </div>
@@ -320,49 +257,50 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="provider" data-i18n>Provider</label>
-                        <input type="text" id="provider">
+                        <input class="input" type="text" id="provider">
                     </div>
                     <div class="form-group">
                         <label for="link" data-i18n>Link</label>
-                        <input type="text" id="link">
+                        <input class="input" type="text" id="link">
                     </div>
                 </div>
 
                 <div class="form-group" style="margin-bottom: 12px;">
                     <label data-i18n>Notes</label>
-                    <input type="text" id="notes">
+                    <input class="input" type="text" id="notes">
                 </div>
 
                 <div class="form-row">
                     <button id="btn-add-update" class="btn btn-primary" onclick="handleUpsert()" data-i18n>Add Item</button>
-                    <button class="btn btn-secondary" onclick="clearForm()" data-i18n>Clear</button>
+                    <button class="btn" onclick="clearForm()" data-i18n>Clear</button>
                 </div>
             </div>
 
-            <div>
-                <div class="section-title" data-i18n>Actions & Export</div>
-                <div class="export-grid">
-                    <button class="btn btn-export" onclick="exportXLSX()"><span>📊</span> <span data-i18n>Excel</span></button>
-                    <button class="btn btn-export" onclick="exportPDF()"><span>📄</span> <span data-i18n>PDF</span></button>
-                    <button class="btn btn-export" onclick="exportImage()"><span>🖼️</span> <span data-i18n>Image</span></button>
-                    <button class="btn btn-export" onclick="sendEmail()"><span>📧</span> <span data-i18n>Email</span></button>
-                </div>
+            <div class="ws-rail-foot">
+                <p class="privacy-line"><span><span data-i18n>Runs in your browser. Nothing you add here is uploaded.</span> <span class="pl-also" data-i18n>Exchange rates come from frankfurter.app; nothing you type is sent.</span></span></p>
             </div>
-
-            <div class="dropzone" id="config-dropzone">
-                <input type="file" id="config-input" accept=".json" hidden>
-                <strong id="dz-title" data-i18n>Load Config</strong>
-                <p id="dz-sub" data-i18n>Drop JSON here or click</p>
-            </div>
-            <div><button class="btn btn-secondary" onclick="resetAll()" style="margin-top: 10px; color: var(--danger); border-color: var(--danger);" data-i18n>Reset All</button></div>
         </aside>
 
-        <main class="preview-area">
+        <main class="ws-pane preview-area">
+            <div class="short-hero" id="quoteHero" hidden>
+                <img class="mark" src="logo.svg" alt="" width="48" height="48">
+                <h1><span data-i18n>A clean quote</span><br><span class="gold" data-i18n>in a minute.</span></h1>
+                <p class="sh-lede" data-i18n>Pick items from the catalog or type your own, then export a PDF, a spreadsheet or an image.</p>
+                <div class="sh-input">
+                    <div class="lh-actions">
+                        <button type="button" class="btn btn-primary" onclick="openCatalog()">&#8862; <span data-i18n>Browse Catalog</span></button>
+                        <button type="button" class="btn" id="heroAddOwn" data-i18n>Add your own item</button>
+                    </div>
+                </div>
+                <div class="examples"><span class="ex-label" data-i18n>Try:</span><button type="button" class="chip-tag" id="heroExample" data-i18n>An example quote</button></div>
+                <p class="privacy-line"><span><span data-i18n>Runs in your browser. Nothing you add here is uploaded.</span> <span class="pl-also" data-i18n>Exchange rates come from frankfurter.app; nothing you type is sent.</span></span></p>
+            </div>
+            <button type="button" class="cs-btn ws-toggle pane-toggle" id="paneToggle" data-ws-toggle aria-expanded="false">☰ <span data-i18n>Edit the quote</span></button>
             <div id="paper" class="paper" translate="no">
                 <div class="print-header">
                     <div>
-                        <h1 id="print-org-name" style="margin:0; color:var(--primary); font-size: 1.9rem;">General Quotation</h1>
-                        <p id="print-date" style="margin:5px 0 0 0; color: var(--text-muted); font-size: 0.9rem;"></p>
+                        <h1 id="print-org-name" style="margin:0; color:var(--pp-primary); font-size: 1.9rem;">General Quotation</h1>
+                        <p id="print-date" style="margin:5px 0 0 0; color: var(--pp-muted); font-size: 0.9rem;"></p>
                     </div>
                     <div style="text-align:right;">
                         <img id="print-logo" class="print-logo" style="display:none;" alt="Logo">
@@ -396,7 +334,7 @@
         <div class="cat-modal" role="dialog" aria-modal="true">
             <div class="cat-head">
                 <h2 data-i18n>Browse Catalog</h2>
-                <input type="text" id="cat-search" class="cat-search" oninput="catState.q=this.value; renderCatalog();" autocomplete="off">
+                <input type="text" id="cat-search" class="input cat-search" oninput="catState.q=this.value; renderCatalog();" autocomplete="off">
                 <button class="cat-close" onclick="closeCatalog()" aria-label="Close">&times;</button>
             </div>
             <div class="cat-body">
@@ -405,7 +343,21 @@
             </div>
         </div>
     </div>
-    <div id="cat-toast" class="cat-toast" translate="no" role="status" aria-live="polite"></div>
+    <div class="modal-scrim" id="resetDlg" hidden>
+        <div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="resetTitle" aria-describedby="resetWhat">
+            <div class="modal-head">
+                <div class="modal-title" id="resetTitle" data-i18n>Reset All</div>
+                <button type="button" class="modal-x" onclick="closeReset()" aria-label="Close">✕</button>
+            </div>
+            <div class="modal-body" id="resetWhat" data-i18n>This deletes the items, the quotation details and any loaded config from this browser. It cannot be undone.</div>
+            <div class="modal-foot">
+                <button type="button" class="btn btn-ghost" onclick="closeReset()" data-i18n>Cancel</button>
+                <button type="button" class="btn btn-danger" id="resetRun" data-i18n>Reset All</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="cat-toast" class="toast ok" translate="no" role="status" aria-live="polite"></div>
 
 <script>
         // --- 1. DEFAULT EMBEDDED CONFIGURATION ---
@@ -1115,7 +1067,7 @@
                     if (pf) {
                         pf.scrollIntoView({ block: 'nearest' });
                         pf.animate([
-                            { outline: '2px solid var(--primary)', outlineOffset: '3px' },
+                            { outline: '2px solid var(--pp-primary)', outlineOffset: '3px' },
                             { outline: '2px solid transparent', outlineOffset: '3px' },
                         ], { duration: 2200 });
                     }
@@ -1134,7 +1086,7 @@
             box.style.display = 'block';
             box.innerHTML = `<button onclick="clearFiscal()" title="${t('Remove tax details')}"
                     aria-label="${t('Remove tax details')}"
-                    style="float:right;background:none;border:none;color:var(--danger);cursor:pointer;font-size:0.8rem;line-height:1;">&#10005;</button>
+                    style="float:right;background:none;border:none;color:var(--err);cursor:pointer;font-size:0.8rem;line-height:1;">&#10005;</button>
                 <b>${escapeHtml(f.label || f.country || '')}</b>
                 <div>${f.lines.map(escapeHtml).join('<br>')}</div>`;
         }
@@ -1156,8 +1108,9 @@
 
         function setupUI() {
             // Colors
-            document.documentElement.style.setProperty('--primary', appState.theme.primary);
-            document.documentElement.style.setProperty('--bg-body', appState.theme.background);
+            // A loaded config's theme: the document accent and the preview background.
+            document.documentElement.style.setProperty('--q-primary', appState.theme.primary);
+            document.documentElement.style.setProperty('--q-page-bg', appState.theme.background);
 
             // Branding: the top bar is the shared Carino navbar; only the
             // printable document carries the org name + logo.
@@ -1217,21 +1170,22 @@
             renderFiscalBox();
         }
 
+        // A saved config (JSON) comes in through Export ▸ Load config, or by
+        // dropping it anywhere on the window. setupUI() runs again after every
+        // load, so the window listeners are wired once.
         function setupDropzone() {
-            const dropzone = document.getElementById('config-dropzone');
             const fileInput = document.getElementById('config-input');
-
-            // Visual state check
-            if(localStorage.getItem('quoteConfig')) {
-                dropzone.classList.add('success');
-                setDzTitle('Config Loaded');
-            }
-
-            dropzone.onclick = () => fileInput.click();
-            dropzone.ondragover = (e) => { e.preventDefault(); dropzone.classList.add('dragover'); };
-            dropzone.ondragleave = () => dropzone.classList.remove('dragover');
-            dropzone.ondrop = (e) => { e.preventDefault(); dropzone.classList.remove('dragover'); if(e.dataTransfer.files.length) processConfigFile(e.dataTransfer.files[0]); };
-            fileInput.onchange = (e) => { if(e.target.files.length) processConfigFile(e.target.files[0]); };
+            fileInput.onchange = (e) => { if(e.target.files.length) processConfigFile(e.target.files[0]); e.target.value = ''; };
+            if (setupDropzone.wired) return;
+            setupDropzone.wired = true;
+            document.addEventListener('dragover', (e) => { if (e.dataTransfer && [...e.dataTransfer.types].includes('Files')) e.preventDefault(); });
+            document.addEventListener('drop', (e) => {
+                const f = e.dataTransfer && e.dataTransfer.files[0];
+                if (!f) return;
+                e.preventDefault();
+                if (/\.json$/i.test(f.name) || f.type === 'application/json') processConfigFile(f);
+                else catToast(t('Drop a config file (.json) to load it'), 'err');
+            });
         }
 
         function processConfigFile(file) {
@@ -1250,10 +1204,7 @@
                     updatePlaceholders();
                     renderTable();
 
-                    // Success Feedback
-                    const dz = document.getElementById('config-dropzone');
-                    dz.classList.add('success');
-                    setDzTitle('Config Loaded');
+                    catToast('✓ ' + t('Config Loaded'));
 
                 } catch (err) {
                     alert(t('Invalid JSON file'));
@@ -1372,13 +1323,13 @@
             catToast('✓ ' + (it.description || t('Add Item')));
         }
 
-        function catToast(msg) {
+        function catToast(msg, kind) {
             const t = document.getElementById('cat-toast');
             if (!t) return;
             t.textContent = msg;
-            t.classList.add('show');
+            t.className = 'toast show ' + (kind || 'ok');
             clearTimeout(t._to);
-            t._to = setTimeout(() => t.classList.remove('show'), 1300);
+            t._to = setTimeout(() => t.classList.remove('show'), 1800);
         }
 
         function handleUpsert() {
@@ -1462,12 +1413,17 @@
             document.getElementById('remove-vat').checked = false;
         }
 
+        // Reset is the one action with no undo, so it confirms in a modal.
         function resetAll() {
-            if(confirm(t('Delete all data?'))) {
-                localStorage.removeItem('quoteConfig');
-                location.reload();
-            }
+            document.getElementById('resetDlg').hidden = false;
+            document.getElementById('resetRun').focus();
         }
+        function closeReset() { document.getElementById('resetDlg').hidden = true; }
+        document.getElementById('resetRun').addEventListener('click', () => {
+            localStorage.removeItem('quoteConfig');
+            location.reload();
+        });
+        document.getElementById('resetDlg').addEventListener('click', (e) => { if (e.target.id === 'resetDlg') closeReset(); });
 
         // --- MATH & RENDER ---
         async function fetchRates() {
@@ -1552,6 +1508,14 @@
             const tfoot = document.querySelector('#quoteTable tfoot');
             tbody.innerHTML = '';
 
+            // No items yet: the short hero stands in for an empty page, and the
+            // exports that need a quotation wait for one.
+            const empty = !appState.items.length;
+            document.getElementById('quoteHero').hidden = !empty;
+            document.getElementById('paper').hidden = empty;
+            document.getElementById('paneToggle').hidden = empty;
+            document.querySelectorAll('.q-out').forEach(b => { b.disabled = empty; });
+
             const targetCurr = appState.config.targetCurrency;
             const vatPct = appState.config.vatRate || 0;
             let subtotal = 0;
@@ -1581,7 +1545,7 @@
                     <td class="numeric">${netUnit.toFixed(2)} ${targetCurr}${origNote}</td>
                     <td class="numeric"><strong>${lineNet.toFixed(2)} ${targetCurr}</strong></td>
                     <td class="delete-col">
-                        <button onclick="deleteItem(${item.id}, event)" style="color:var(--danger); background:none; border:none; cursor:pointer; font-size:1.2em;">&times;</button>
+                        <button onclick="deleteItem(${item.id}, event)" style="color:var(--err); background:none; border:none; cursor:pointer; font-size:1.2em;">&times;</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -1590,12 +1554,12 @@
             const vatAmount = subtotal * (vatPct/100);
             const total = subtotal + vatAmount;
             tfoot.innerHTML = `
-                <tr class="sub"><td colspan="4" style="text-align:right; color:var(--text-muted);">${t('Subtotal')}</td>
+                <tr class="sub"><td colspan="4" style="text-align:right; color:var(--pp-muted);">${t('Subtotal')}</td>
                     <td class="numeric">${subtotal.toFixed(2)} ${targetCurr}</td><td></td></tr>
-                <tr><td colspan="4" style="text-align:right; color:var(--text-muted);">${t('VAT')} (${vatPct}%)</td>
+                <tr><td colspan="4" style="text-align:right; color:var(--pp-muted);">${t('VAT')} (${vatPct}%)</td>
                     <td class="numeric">${vatAmount.toFixed(2)} ${targetCurr}</td><td></td></tr>
                 <tr class="grand" style="font-weight:bold;"><td colspan="4" style="text-align:right;">${t('TOTAL (Inc. VAT)')}</td>
-                    <td class="numeric" style="color:var(--primary);">${total.toFixed(2)} ${targetCurr}</td><td></td></tr>
+                    <td class="numeric" style="color:var(--pp-primary);">${total.toFixed(2)} ${targetCurr}</td><td></td></tr>
             `;
 
             document.getElementById('print-date').innerText = `${t('Date')}: ${new Date().toLocaleDateString()}`;
@@ -1829,14 +1793,6 @@
             document.getElementById('cat-search').placeholder = t('Search products & services…');
         }
 
-        // Dropzone title flips between 'Load Config' and 'Config Loaded';
-        // track the key so applyStaticI18n keeps the right one on lang change.
-        function setDzTitle(key) {
-            const el = document.getElementById('dz-title');
-            el.dataset.i18nKey = key;
-            el.textContent = t(key);
-        }
-
         // i18n.js calls this after every applyStaticI18n() pass (initial load
         // and each carino:langchange) so dynamic surfaces re-render translated.
         window.onLanguageApplied = () => {
@@ -1847,46 +1803,41 @@
             if (modal && modal.classList.contains('open')) renderCatalog();
         };
     </script>
-  <!-- Handy bar: floating quick-action pill, shown on mobile only (see CSS).
-       Buttons call the same handlers as the sidebar; ☰ opens the form drawer. -->
-  <div class="handy-bar" id="handyBar" role="toolbar" aria-label="Quick actions">
-    <button type="button" id="handyMenu" class="handy-btn" title="Open form" aria-label="Open form">☰</button>
-    <button type="button" class="handy-btn" title="Browse catalog" aria-label="Browse catalog" onclick="openCatalog()">&#8862;</button>
-  </div>
-
   <script src="carino-bridge.js" defer></script>
 <script src="carino-navbar.js" data-app="Quote" data-repo="Quote" defer></script>
   <script src="carino-lang.js" defer></script>
   <script src="i18n.js" defer></script>
+  <script src="carino-ui.js" defer></script>
   <script>
-  /* Mobile: the sidebar becomes an off-canvas drawer opened from the floating
-     handy bar's ☰. Everything reverses above 900px, where the handy bar is
-     hidden and options live in the sidebar. (The language switcher is the
-     fleet-wide one injected into the navbar by carino-lang.js.) */
+  /* The empty state's second doors. The Export menu and the form rail's
+     drawer (900px and below) are carino-ui.js's. */
   (function () {
     'use strict';
-    var MQ = window.matchMedia('(max-width: 900px)');
-    var sidebar = document.querySelector('.sidebar');
-    if (!sidebar) return;
 
-    var scrim = document.createElement('div');
-    scrim.id = 'gqScrim';
-    document.body.appendChild(scrim);
+    // Esc also closes the reset confirmation; the Export menu is carino-ui.js's.
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeReset(); });
 
-    function open() { sidebar.classList.add('open'); scrim.classList.add('open'); document.body.classList.add('gq-lock'); }
-    function close() { sidebar.classList.remove('open'); scrim.classList.remove('open'); document.body.classList.remove('gq-lock'); }
-    function toggle() { sidebar.classList.contains('open') ? close() : open(); }
+    // "Add your own item": the form lives in the rail, which is a drawer on phones.
+    document.getElementById('heroAddOwn').addEventListener('click', function () {
+      var ws = document.querySelector('.ws');
+      if (window.matchMedia('(max-width: 900px)').matches && !ws.classList.contains('drawer-open')) document.getElementById('paneToggle').click();
+      document.getElementById('description').focus();
+    });
 
-    scrim.addEventListener('click', close);
-    window.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
-
-    var menu = document.getElementById('handyMenu');
-    if (menu) menu.addEventListener('click', function (e) { e.stopPropagation(); toggle(); });
-
-    // Close the drawer when the layout flips back to desktop.
-    function onBreak() { if (!MQ.matches) close(); }
-    if (MQ.addEventListener) MQ.addEventListener('change', onBreak);
-    else if (MQ.addListener) MQ.addListener(onBreak);
+    // A sample quotation, labelled as one, built from the first catalog entries.
+    document.getElementById('heroExample').addEventListener('click', function () {
+      normalizeCatalog();
+      appState.catalog.slice(0, 3).forEach(function (it, i) {
+        appState.items.push({ id: nextId(), desc: it.description, provider: it.provider || '', link: it.link || '',
+          note: it.note || '', price: +it.price || 0, currency: it.currency || appState.config.targetCurrency,
+          stripVat: !!it.vatStripped, qty: i === 0 ? 3 : 1 });
+      });
+      appState.meta = Object.assign(appState.meta || {}, { client: t('Example client (sample)') });
+      document.getElementById('q-client').value = appState.meta.client;
+      saveState();
+      fetchRates().then(renderTable);
+      renderTable();
+    });
   })();
   </script>
 </body>
