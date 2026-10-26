@@ -1122,7 +1122,7 @@
             // t() falls back to the string itself, so custom org names pass through
             // untouched while the default "General Quotation" heading localizes.
             document.getElementById('print-org-name').innerText = t(appState.config.orgName);
-            document.title = `${appState.config.orgName} - Quote`;
+            document.title = `${appState.config.orgName} - ${t('Quote')}`;
 
             // Dropzone Logic
             setupDropzone();
@@ -1540,7 +1540,7 @@
                     <td><strong>${escapeHtml(item.desc)}</strong>${item.note ? `<span class="note">${escapeHtml(item.note)}</span>` : ''}</td>
                     <td>
                         <div>${escapeHtml(item.provider || '-')}</div>
-                        ${item.link ? `<a href="${escapeAttr(item.link)}" target="_blank" rel="noopener" class="provider-link" onclick="event.stopPropagation()">Link ↗</a>` : ''}
+                        ${item.link ? `<a href="${escapeAttr(item.link)}" target="_blank" rel="noopener" class="provider-link" onclick="event.stopPropagation()">${t('Link')} ↗</a>` : ''}
                     </td>
                     <td class="numeric">${netUnit.toFixed(2)} ${targetCurr}${origNote}</td>
                     <td class="numeric"><strong>${lineNet.toFixed(2)} ${targetCurr}</strong></td>
@@ -1619,7 +1619,9 @@
             if (fis) XLSX.utils.sheet_add_aoa(ws,
                 [[fis.label || fis.country || ''], [fis.lines.join(' · ')]], { origin: 'A1' });
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Quote");
+            // Excel sheet names: no []:*?/\ and at most 31 characters.
+            const sheetName = (String(t('Quote')).replace(/[\[\]:*?\/\\]/g, ' ').trim() || 'Quote').slice(0, 31);
+            XLSX.utils.book_append_sheet(wb, ws, sheetName);
             XLSX.writeFile(wb, `${appState.config.orgName}_Quote.xlsx`);
         }
 
@@ -1719,7 +1721,7 @@
             const total = subtotal + vatAmount;
 
             doc.autoTable({
-                head: [[t('Qty'), t('Description'), t('Provider'), "Link", t('Unit (net)'), t('Amount (net)')]],
+                head: [[t('Qty'), t('Description'), t('Provider'), t('Link'), t('Unit (net)'), t('Amount (net)')]],
                 body: body,
                 foot: [
                     [{ content: t('Subtotal'), colSpan: 5, styles: { halign: 'right' } }, `${subtotal.toFixed(2)} ${targetCurr}`],
@@ -1768,7 +1770,7 @@
             // than as part of the recipient's details.
             const fis = fiscalCard();
             if (fis) body += `\n\n${fis.label || fis.country || ''}\n${fis.lines.join('\n')}`;
-            const subject = `${appState.config.orgName} - Quote`;
+            const subject = `${appState.config.orgName} - ${t('Quote')}`;
             window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         }
 
@@ -1791,6 +1793,8 @@
             document.getElementById('description').placeholder = t('Description');
             document.getElementById('notes').placeholder = t('Notes');
             document.getElementById('cat-search').placeholder = t('Search products & services…');
+            document.querySelectorAll('.cat-close, .modal-x').forEach(b => b.setAttribute('aria-label', t('Close')));
+            document.getElementById('print-logo').alt = t('Logo');
         }
 
         // i18n.js calls this after every applyStaticI18n() pass (initial load
@@ -1798,6 +1802,7 @@
         window.onLanguageApplied = () => {
             updatePlaceholders();
             document.getElementById('print-org-name').innerText = t(appState.config.orgName);
+            document.title = `${appState.config.orgName} - ${t('Quote')}`;
             renderTable();
             const modal = document.getElementById('cat-modal');
             if (modal && modal.classList.contains('open')) renderCatalog();

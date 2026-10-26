@@ -10,6 +10,9 @@
 
 const I18N = {
     es: {
+        // Translation sweep: strings that stayed in English
+        "Quote": "Cotización",
+        "Logo": "Logotipo",
         // Page-type homologation (short hero, export menu, privacy line)
         "Runs in your browser. Nothing you add here is uploaded.": "Funciona en tu navegador. Nada de lo que añades aquí se sube.",
         "Try:": "Prueba:",
@@ -96,6 +99,9 @@ const I18N = {
         'Live exchange rates unavailable — converted amounts may be inaccurate.': 'Tipos de cambio no disponibles: los importes convertidos pueden ser inexactos.',
     },
     'pt-BR': {
+        // Translation sweep: strings that stayed in English
+        "Quote": "Orçamento",
+        "Logo": "Logotipo",
         // Page-type homologation (short hero, export menu, privacy line)
         "Runs in your browser. Nothing you add here is uploaded.": "Roda no seu navegador. Nada do que você adiciona aqui é enviado.",
         "Try:": "Experimente:",
@@ -178,6 +184,9 @@ const I18N = {
         'Live exchange rates unavailable — converted amounts may be inaccurate.': 'Câmbio ao vivo indisponível: os valores convertidos podem estar imprecisos.',
     },
     ja: {
+        // Translation sweep: strings that stayed in English
+        "Quote": "見積",
+        "Logo": "ロゴ",
         // Page-type homologation (short hero, export menu, privacy line)
         "Runs in your browser. Nothing you add here is uploaded.": "ブラウザ内で動作します。ここに追加したものはアップロードされません。",
         "Try:": "例:",
@@ -260,6 +269,9 @@ const I18N = {
         'Live exchange rates unavailable — converted amounts may be inaccurate.': '為替レートを取得できません — 換算額が不正確な場合があります。',
     },
     ru: {
+        // Translation sweep: strings that stayed in English
+        "Quote": "Смета",
+        "Logo": "Логотип",
         // Page-type homologation (short hero, export menu, privacy line)
         "Runs in your browser. Nothing you add here is uploaded.": "Работает в вашем браузере. Ничего из добавленного сюда не загружается.",
         "Try:": "Попробуйте:",
