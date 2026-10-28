@@ -339,11 +339,13 @@
   function ask(title, body, ok) {
     return new Promise(resolve => {
       const scrim = document.createElement('div');
-      scrim.className = 'modal-scrim';
+      scrim.className = 'modal-scrim'; scrim.dataset.ask = '1'; scrim.tabIndex = -1;
       scrim.innerHTML = `<div class="modal" role="alertdialog" aria-modal="true"><div class="modal-head"><div class="modal-title">${esc(title)}</div></div>
         <div class="modal-body">${body}</div><div class="modal-foot"><button type="button" class="btn btn-ghost" data-r="0">${esc(T('Cancel'))}</button>
         <button type="button" class="btn btn-primary" data-r="1">${esc(ok)}</button></div></div>`;
       scrim.addEventListener('click', e => { const b = e.target.closest('[data-r]'); if (b || e.target === scrim) { scrim.remove(); resolve(!!(b && b.dataset.r === '1')); } });
+      // Escape is Cancel; stopped here so the catalog behind does not close too.
+      scrim.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); scrim.remove(); resolve(false); } });
       document.body.append(scrim);
       scrim.querySelector('[data-r="1"]').focus();
     });
@@ -595,7 +597,8 @@
   }
   document.addEventListener('keydown', e => {
     const m = document.getElementById('ced-modal');
-    if (e.key === 'Escape' && m && m.classList.contains('open')) { e.stopImmediatePropagation(); requestClose(); }
+    // An open ask() takes the Escape itself (its Cancel), instead of stacking a second one.
+    if (e.key === 'Escape' && m && m.classList.contains('open') && !document.querySelector('.modal-scrim[data-ask]')) { e.stopImmediatePropagation(); requestClose(); }
   }, true);
 
   /* ───────────── boot ───────────── */

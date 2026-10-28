@@ -60,6 +60,7 @@
             padding: 8px 10px; border-radius: 6px; font-family: var(--mono); font-size: var(--fs-sm); margin-bottom: 12px;
             align-items: center; justify-content: space-between;
         }
+        .edit-x { background: none; border: none; cursor: pointer; }
         .btn-block { width: 100%; justify-content: center; }
         .form-row > .btn { flex: 1; justify-content: center; }
         .btn-danger { border-color: rgba(239,68,68,0.5); color: var(--err); }
@@ -86,7 +87,11 @@
         }
         .paper h1 { font-family: var(--display); font-weight: 900; }
 
-        .paper table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .paper table { width: 100%; border-collapse: collapse; }
+        /* The quote table keeps its columns on a phone and pans inside this box
+           instead of pushing the whole preview sideways. */
+        #quoteTable .q-prov-inline { display: none; }   /* phones only, see the 640px block */
+        .q-table-scroll { margin-top: 20px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
         .paper th { text-align: left; padding: 12px 8px; border-bottom: 2px solid var(--pp-border); color: var(--pp-muted); font-family: var(--mono); font-size: var(--fs-label); text-transform: uppercase; letter-spacing: 0.05em; }
         .paper td { padding: 12px 8px; border-bottom: 1px solid var(--pp-border); vertical-align: top; font-size: var(--fs-sec); }
         .paper tbody tr:hover { background-color: #faf7ef; cursor: pointer; }
@@ -121,9 +126,11 @@
         .paper tfoot .grand td { border-top: 2px solid var(--pp-primary); font-size: 1.05rem; padding-top: 10px; }
 
         /* --- Catalog browser modal --- */
-        .cat-modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.72); backdrop-filter: blur(2px); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 40px; }
+        .cat-modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.72); backdrop-filter: blur(2px); z-index: 1002; display: none; align-items: center; justify-content: center; padding: 40px; }
+        /* 1002: above the rail drawer (1001) and its scrim, so "Browse Catalog"
+           pressed inside the open drawer is not drawn under it. */
         .cat-modal-backdrop.open { display: flex; }
-        .cat-modal { position: relative; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; width: 100%; max-width: 980px; height: 82vh; max-height: 760px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 24px 70px rgba(0,0,0,0.65); }
+        .cat-modal { position: relative; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; width: 100%; max-width: 980px; height: 82vh; height: 82dvh; max-height: 760px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 24px 70px rgba(0,0,0,0.65); }
         .cat-head { display: flex; align-items: center; gap: 14px; padding: 16px 20px; border-bottom: 1px solid var(--border); }
         .cat-head h2 { font-family: var(--display); font-weight: 900; text-transform: uppercase; font-size: 0.95rem; margin: 0; letter-spacing: 0.05em; color: var(--accent); white-space: nowrap; }
         .cat-search { flex: 1; }
@@ -146,7 +153,7 @@
         .cat-eye:hover { color: var(--accent); background: var(--bg-elev); }
         .cat-showhidden { margin-top: 10px; font-size: .72rem !important; color: var(--text-sec) !important; border: 1px dashed var(--border) !important; }
         .cat-switch .cat-edit { border-style: dashed; }
-        .ced { height: 88vh; max-width: 1200px; }
+        .ced { height: 88vh; height: 88dvh; max-width: 1200px; }
         .ced-name { max-width: 260px; } .ced-rev { max-width: 110px; }
         .ced-tabs { display: flex; gap: 4px; padding: 8px 16px 0; border-bottom: 1px solid var(--border); }
         .ced-tabs button { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--text-sec); padding: 8px 12px; cursor: pointer; font: inherit; font-size: .85rem; }
@@ -195,7 +202,7 @@
         .ced-def { display: flex; gap: 6px; align-items: center; font-size: .72rem; color: var(--text-sec); }
         .ced-def .input { width: 70px; min-width: 0; padding: 5px 7px; font-size: .78rem; }
         .print-notes p { margin: 0 0 6px; white-space: pre-line; }
-        .cat-grid { flex: 1; overflow-y: auto; padding: 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 12px; align-content: start; }
+        .cat-grid { flex: 1; overflow-y: auto; padding: 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(215px, 100%), 1fr)); gap: 12px; align-content: start; }
         .prod-card { border: 1px solid var(--border); border-radius: 8px; padding: 12px 12px 10px; background: var(--bg-elev); cursor: pointer; display: flex; flex-direction: column; gap: 5px; transition: border-color 0.15s, transform 0.1s; }
         .prod-card:hover { border-color: var(--accent); transform: translateY(-1px); }
         .prod-card .pc-prov { font-family: var(--mono); font-size: 0.6rem; color: var(--text-sec); text-transform: uppercase; letter-spacing: 0.05em; }
@@ -207,17 +214,160 @@
         .pc-add { margin-top: 6px; background: transparent; color: var(--accent); border: 1px solid var(--border); border-radius: 5px; font-family: var(--mono); font-weight: 700; font-size: 0.62rem; padding: 5px 8px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.04em; transition: 0.15s; }
         .pc-add:hover { background: var(--accent); color: #050505; border-color: var(--accent); }
         .cat-empty { color: var(--text-sec); font-family: var(--mono); font-size: 0.8rem; padding: 48px; text-align: center; grid-column: 1 / -1; }
-        @media (max-width: 640px) {
-            .cat-modal-backdrop { padding: 12px; }
-            .cat-modal { height: 90vh; }
-            .cat-rail { width: 130px; }
-        }
+        /* Tall enough for the whole menu on a landscape phone; folded into the
+           navbar's ⋯ menu it is part of that list instead. */
+        #exportMenu { max-height: calc(100dvh - var(--nav-h) - 16px); overflow-y: auto; overscroll-behavior: contain; }
+        #carinoNav .cn-more-menu #exportMenu { max-height: none; overflow: visible; }
 
         @media (max-width: 900px) {
             /* The drawer starts under the navbar, which sits above it. */
             .ws-rail { top: var(--nav-h); }
             .ws-pane.preview-area { padding: 18px 16px; }
             .form-row { flex-direction: column; }
+            /* In a column flex-basis is the height: the inline flex on Qty
+               became a 70px gap and flex: 1 squashed the buttons to 16px. */
+            .form-row > .form-group { flex: 0 0 auto !important; }
+            .form-row > .btn { flex: 0 0 auto; height: 44px; }
+            /* iOS zooms the page into any field under 16px. */
+            .input, .select, .textarea, .disc-box textarea, .fx-row .input { font-size: 16px; }
+            .fx-row { grid-template-columns: 70px 1fr auto; }
+            .fx-row .input { padding: 8px 10px; min-height: 40px; }
+            .cat-head { flex-wrap: wrap; row-gap: 10px; }
+            /* The title keeps its width; the source switch takes a row of its own
+               under title, search and close instead of squeezing the title. */
+            .cat-head h2 { flex: 0 0 auto; }
+            .cat-switch { order: 3; flex: 1 1 100%; }
+            .cat-search { flex: 1 1 220px; min-width: 0; }
+        }
+
+        /* 640px is the navbar's phone step (carino-navbar.js hides the app tag here). */
+        @media (max-width: 640px) {
+            /* carino-lang.js injects #cnLangBtn{display:flex} at runtime. */
+            #cnLangBtn, #cnLangBox { display: none !important; }
+
+            .ws-pane.preview-area { padding: 12px; }
+            .paper { padding: 20px 16px; min-height: 0; }
+            .q-table-scroll { margin: 20px -16px 0; padding: 0 0 0 16px; }
+            /* Qty · description · amount fit a phone: Details and Unit go, and the provider and
+               "qty × unit" are shown under the description instead. */
+            #quoteTable th:nth-child(3), #quoteTable tbody td:nth-child(3),
+            #quoteTable th:nth-child(4), #quoteTable tbody td:nth-child(4) { display: none; }
+            #quoteTable .delete-col { width: 44px; padding-left: 2px; padding-right: 2px; }
+            #quoteTable .q-prov-inline { display: block; }
+            #quoteTable td.numeric { white-space: nowrap; font-size: .82rem; }
+            #quoteTable th.numeric { white-space: normal; }
+            #quoteTable th, #quoteTable td { padding-left: 6px; padding-right: 6px; }
+            /* The remove button stays in reach while the table pans. */
+            .paper .delete-col { position: sticky; right: 0; background: #fff; box-shadow: -10px 0 8px -8px rgba(0,0,0,.12); }
+            .paper tbody tr:hover .delete-col { background: #faf7ef; }
+            .print-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .print-header > div:last-child { text-align: left !important; }
+            /* The rule this tucks under is no longer directly above it. */
+            .paper .print-fiscal { margin: 0 0 14px; }
+            .print-foot { flex-wrap: wrap; }
+
+            /* The catalog is a sheet under the navbar: centred, its top slid under
+               the navbar, and vh heights ignore the browser's own toolbars. */
+            .cat-modal-backdrop { top: var(--nav-h); padding: 0; align-items: stretch; }
+            .cat-modal { height: auto; max-height: none; border-radius: 0; border-width: 1px 0 0; padding-bottom: env(safe-area-inset-bottom); }
+            .cat-head { padding: 12px; }
+            .cat-head h2 { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+            .cat-close { order: 1; min-width: 44px; min-height: 44px; }
+            .cat-switch { order: 2; flex: 1 1 100%; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+            .cat-switch button { flex: none; white-space: nowrap; min-height: 40px; }
+            .cat-search { order: 3; flex: 1 1 100%; }
+            .cat-body { flex-direction: column; }
+            .cat-rail { width: auto; flex-direction: row; overflow-x: auto; overflow-y: hidden; border-right: 0; border-bottom: 1px solid var(--border); padding: 8px 12px; gap: 6px; flex-shrink: 0; scrollbar-width: none; }
+            .cat-rail button { flex: none; white-space: nowrap; min-height: 40px; }
+            .cat-grid { padding: 12px; }
+            .cat-eye { position: static; transform: none; min-width: 32px; min-height: 32px; display: inline-flex; align-items: center; justify-content: center; margin-left: 4px; }
+            .cat-showhidden { margin-top: 0; white-space: nowrap; }
+
+            /* The editor takes the whole screen, above the navbar (which would sit
+               on its head and stay tappable) and below ask()'s .modal-scrim. */
+            #ced-modal { top: 0; z-index: 2147483500; }
+            #ced-modal .ced { border: 0; padding-top: env(safe-area-inset-top); padding-bottom: 0; }
+            #ced-modal .cat-head { flex-wrap: wrap; gap: 8px 10px; padding: 12px 16px; }
+            /* Title and ✕ fill row 1, so name and revision share row 2. */
+            #ced-modal .cat-head h2 { flex: 1 1 calc(100% - 64px); }
+            #ced-modal .cat-close { order: 2; font-size: 1.6rem; }
+            #ced-modal .ced-name { order: 3; flex: 1 1 58%; max-width: none; }
+            #ced-modal .ced-rev { order: 4; flex: 1 1 30%; max-width: none; }
+            .ced-foot { flex-wrap: wrap; gap: 8px; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); }
+            .ced-foot .ced-note { flex: 1 1 100%; font-size: .72rem; }
+            .ced-foot .ced-note:empty, .ced-foot .sp { display: none; }
+            .ced-foot .btn { flex: 1; justify-content: center; height: auto; padding: 8px 12px; line-height: 1.2; text-align: center; }
+            #ced-items .ced-bar { gap: 6px; }
+            #ced-items #ced-q { flex: 1 1 100%; max-width: none; }
+            #ced-items .ced-scroll { min-height: 240px; }
+            #ced-items > .ced-hint { font-size: .72rem; }
+
+            body:has(#ced-modal.open) #cat-toast { bottom: calc(112px + env(safe-area-inset-bottom)); }
+
+            .modal-scrim { padding: 16px; padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+            .modal-scrim .modal { max-height: min(640px, calc(100dvh - 32px)); }
+            .modal-scrim .modal-foot .btn { height: auto; min-height: 44px; padding: 8px 14px; line-height: 1.25; text-align: center; }
+        }
+
+        /* Phones either way up: the toast runs along the bottom, clear of the
+           sheet heads and their buttons (it never takes a tap), above the editor
+           so its import and save messages still show, and on an opaque backing
+           because the shared toast tints are see-through over card text. */
+        @media (max-width: 640px), (max-height: 500px) {
+            #cat-toast { top: auto; bottom: calc(12px + env(safe-area-inset-bottom)); left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); width: auto; z-index: 2147483550; pointer-events: none; }
+            #cat-toast.ok   { background: color-mix(in srgb, #22c55e 14%, var(--bg-card)); }
+            #cat-toast.err  { background: color-mix(in srgb, #ef4444 14%, var(--bg-card)); }
+            #cat-toast.warn { background: color-mix(in srgb, #eab308 14%, var(--bg-card)); }
+            #cat-toast.info { background: color-mix(in srgb, var(--info) 14%, var(--bg-card)); }
+        }
+
+        @media (pointer: coarse) {
+            .check-row { min-height: 40px; }
+            .check-row input { width: 20px; height: 20px; }
+            .check-row label { padding: 10px 0; }
+            #fx-refresh { min-width: 40px; min-height: 40px; display: inline-flex; align-items: center; justify-content: center; }
+            .fx-link { padding: 10px 4px; }
+            .disc-presets { gap: 8px; }
+            .disc-presets .chip-tag { min-height: 36px; padding: 8px 12px; }
+            .edit-x { min-width: 40px; min-height: 40px; }
+            #carinoNav #exportMenuBtn, #carinoNav .cn-more { min-height: 40px; min-width: 40px; }
+            #exportMenu .cs-menu-item { min-height: 44px; }
+            #paneToggle { min-height: 44px; }
+            #heroExample { min-height: 36px; padding: 8px 14px; }
+            .pc-add { min-height: 40px; font-size: .7rem; }
+            .cat-switch button { min-height: 40px; white-space: nowrap; }
+            .cat-close { min-width: 44px; min-height: 44px; }
+            .modal-scrim .modal-foot .btn { min-height: 44px; }
+            /* The quote row's remove button (hidden in the exported image). */
+            #quoteTable .delete-col button { min-width: 40px; min-height: 40px; }
+            /* Catalog editor on any touch screen, tablets and landscape phones
+               included: iOS zooms into fields under 16px. */
+            #ced-modal .input, #ced-modal textarea { font-size: 16px; }
+            #ced-modal .btn { min-height: 44px; }
+            .ced-act button { min-width: 40px; min-height: 40px; }
+            .ced-table .input, .ced-def .input { min-height: 40px; }
+            #ced-modal .ced-def .input { width: 84px; }
+            .ced-table input[type=checkbox], .ced-mode input[type=checkbox] { width: 22px; height: 22px; }
+        }
+        /* A landscape phone: the centred modals would start under the navbar. */
+        @media (max-height: 500px) {
+            .cat-modal-backdrop { top: var(--nav-h); padding: 0 env(safe-area-inset-right) 0 env(safe-area-inset-left); align-items: stretch; }
+            .cat-modal { height: auto; max-height: none; border-radius: 0; border-width: 1px 0 0; }
+            #ced-modal { top: 0; z-index: 2147483500; }
+            #ced-modal .ced { border: 0; }
+            /* Above the editor's one-row footer, not over its Save button. */
+            body:has(#ced-modal.open) #cat-toast { bottom: calc(80px + env(safe-area-inset-bottom)); }
+        }
+        /* A phone held sideways is wider than the navbar's 640px phone step,
+           so the language button is hidden here too. */
+        @media (max-height: 500px) and (pointer: coarse) {
+            #cnLangBtn, #cnLangBox { display: none !important; }
+        }
+
+        /* No hover on touch: the hide/show eye would be an invisible target,
+           and over the label in a narrow rail. */
+        @media (hover: none) {
+            .cat-eye { opacity: 1; position: static; transform: none; min-width: 32px; min-height: 32px; display: inline-flex; align-items: center; justify-content: center; margin-left: 4px; }
         }
     </style>
 </head>
@@ -308,7 +458,7 @@
 
                 <div id="edit-indicator" class="edit-indicator">
                     <span data-i18n>Editing Item</span>
-                    <button onclick="cancelEdit()" style="background:none;border:none;cursor:pointer;">✖</button>
+                    <button class="edit-x" onclick="cancelEdit()">✖</button>
                 </div>
 
                 <div class="form-group" style="margin-bottom: 12px;">
@@ -397,6 +547,7 @@
                 <div id="print-fiscal" class="print-fiscal"></div>
                 <div id="print-billto" class="print-billto"></div>
 
+                <div class="q-table-scroll">
                 <table id="quoteTable">
                     <thead>
                         <tr>
@@ -411,6 +562,7 @@
                     <tbody></tbody>
                     <tfoot></tfoot>
                 </table>
+                </div>
                 <div class="print-foot"><div id="print-notes" class="print-notes"></div><div id="print-qr" class="print-qr"></div></div>
             </div>
         </main>
@@ -1735,6 +1887,8 @@
             return r == null ? 1 : r;
         }
 
+        const PHONE_TABLE = window.matchMedia('(max-width: 640px)');
+        PHONE_TABLE.addEventListener('change', () => renderTable());
         function renderTable() {
             const tbody = document.querySelector('#quoteTable tbody');
             const tfoot = document.querySelector('#quoteTable tfoot');
@@ -1769,7 +1923,7 @@
                 tr.onclick = () => loadItemForEdit(item.id);
                 tr.innerHTML = `
                     <td class="center" style="font-weight:600;">${qty}</td>
-                    <td><strong>${escapeHtml(item.desc)}</strong>${item.note ? `<span class="note">${escapeHtml(item.note)}</span>` : ''}</td>
+                    <td><strong>${escapeHtml(item.desc)}</strong>${item.note ? `<span class="note">${escapeHtml(item.note)}</span>` : ''}${item.provider ? `<span class="note q-prov-inline">${escapeHtml(item.provider)}</span>` : ''}<span class="note q-prov-inline">${qty} × ${netUnit.toFixed(2)} ${targetCurr}</span></td>
                     <td>
                         <div>${escapeHtml(item.provider || '-')}</div>
                         ${QuoteCatalog.safeLink(item.link) ? `<a href="${escapeAttr(item.link)}" target="_blank" rel="noopener" class="provider-link" onclick="event.stopPropagation()">${t('Link')} ↗</a>` : ''}
@@ -1785,12 +1939,15 @@
 
             const vatAmount = subtotal * (vatPct/100);
             const total = subtotal + vatAmount;
+            // Phones drop the Details and Unit columns (provider and "qty × unit" move under the
+            // description), so the totals' label spans two columns there.
+            const lab = PHONE_TABLE.matches ? 2 : 4;
             tfoot.innerHTML = `
-                <tr class="sub"><td colspan="4" style="text-align:right; color:var(--pp-muted);">${t('Subtotal')}</td>
+                <tr class="sub"><td colspan="${lab}" style="text-align:right; color:var(--pp-muted);">${t('Subtotal')}</td>
                     <td class="numeric">${subtotal.toFixed(2)} ${targetCurr}</td><td></td></tr>
-                <tr><td colspan="4" style="text-align:right; color:var(--pp-muted);">${t('VAT')} (${vatPct}%)</td>
+                <tr><td colspan="${lab}" style="text-align:right; color:var(--pp-muted);">${t('VAT')} (${vatPct}%)</td>
                     <td class="numeric">${vatAmount.toFixed(2)} ${targetCurr}</td><td></td></tr>
-                <tr class="grand" style="font-weight:bold;"><td colspan="4" style="text-align:right;">${t('TOTAL (Inc. VAT)')}</td>
+                <tr class="grand" style="font-weight:bold;"><td colspan="${lab}" style="text-align:right;">${t('TOTAL (Inc. VAT)')}</td>
                     <td class="numeric" style="color:var(--pp-primary);">${total.toFixed(2)} ${targetCurr}</td><td></td></tr>
             `;
 
@@ -1905,7 +2062,16 @@
         function exportImage() {
             const el = document.getElementById('paper');
             el.classList.add('snapshot-mode');
-            html2canvas(el, { useCORS: true, scale: 2 }).then(canvas => {
+            // Laid out at desktop width in the clone, so the PNG is the same page
+            // on any device instead of a phone-wide strip with the table cut off.
+            html2canvas(el, { useCORS: true, scale: 2, windowWidth: 1000, width: 900, onclone: d => {
+                const p = d.getElementById('paper');
+                Object.assign(p.style, { width: '900px', maxWidth: '900px', padding: '44px', minHeight: '800px' });
+                // The clone is laid out at desktop width: the Details column is back, so the totals span 4.
+                d.querySelectorAll('#quoteTable tfoot td[colspan]').forEach(td => { td.colSpan = 4; });
+                const s = d.querySelector('.q-table-scroll');
+                if (s) Object.assign(s.style, { overflow: 'visible', margin: '20px 0 0', padding: '0' });
+            } }).then(canvas => {
                 const link = document.createElement('a');
                 link.download = 'quote.png';
                 link.href = canvas.toDataURL();
