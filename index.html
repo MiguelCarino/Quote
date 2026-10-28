@@ -32,6 +32,8 @@
     <script src="vendor/jspdf.umd.min.js"></script>
     <script src="vendor/jspdf.plugin.autotable.min.js"></script>
     <script src="vendor/html2canvas.min.js"></script>
+    <script src="vendor/qrcode-generator-1.4.4.min.js"></script>
+    <script src="carino-fx.js"></script>
 <link rel="stylesheet" href="fonts/carino-fonts.css">
     <link rel="stylesheet" href="carino-ui.css">
 
@@ -133,6 +135,66 @@
         .cat-rail button:hover { color: var(--text); background: var(--bg-elev); }
         .cat-rail button.active { background: var(--accent); color: #050505; font-weight: 700; }
         .cat-rail .count { opacity: 0.7; font-size: 0.66rem; }
+        .cat-switch { display: flex; flex-wrap: wrap; gap: 4px; }
+        .cat-switch button { font: inherit; font-size: .8rem; padding: 4px 10px; border-radius: 999px; cursor: pointer;
+            background: transparent; color: inherit; border: 1px solid rgba(255,255,255,.18); }
+        .cat-switch button.active { border-color: var(--q-primary, #eab308); color: var(--q-primary, #eab308); }
+        .cat-rail button { position: relative; }
+        .cat-rail button.is-hidden { opacity: .55; }
+        .cat-eye { position: absolute; right: 30px; top: 50%; transform: translateY(-50%); font-size: .6rem; color: var(--text-sec); padding: 2px 4px; border-radius: 4px; opacity: 0; }
+        .cat-rail button:hover .cat-eye, .cat-rail button.is-hidden .cat-eye, .cat-eye:focus { opacity: 1; }
+        .cat-eye:hover { color: var(--accent); background: var(--bg-elev); }
+        .cat-showhidden { margin-top: 10px; font-size: .72rem !important; color: var(--text-sec) !important; border: 1px dashed var(--border) !important; }
+        .cat-switch .cat-edit { border-style: dashed; }
+        .ced { height: 88vh; max-width: 1200px; }
+        .ced-name { max-width: 260px; } .ced-rev { max-width: 110px; }
+        .ced-tabs { display: flex; gap: 4px; padding: 8px 16px 0; border-bottom: 1px solid var(--border); }
+        .ced-tabs button { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--text-sec); padding: 8px 12px; cursor: pointer; font: inherit; font-size: .85rem; }
+        .ced-tabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
+        .ced-body { flex: 1; overflow: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+        .ced-body[hidden] { display: none; }
+        .ced-bar, .ced-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .ced-bar .input { max-width: 280px; } .ced-count { font: .72rem var(--mono); color: var(--text-sec); margin-right: auto; }
+        .ced-scroll { overflow: auto; flex: 1; border: 1px solid var(--border); border-radius: 8px; min-height: 200px; }
+        .ced-table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+        .ced-table th { position: sticky; top: 0; background: var(--bg-card, #111); text-align: left; font: 600 .62rem var(--mono); text-transform: uppercase; letter-spacing: .05em; color: var(--text-sec); padding: 8px 6px; z-index: 1; }
+        .ced-table td { padding: 3px 4px; border-top: 1px solid var(--border); }
+        .ced-table .input { padding: 5px 7px; font-size: .8rem; min-width: 90px; width: 100%; }
+        .ced-table .ced-desc { min-width: 220px; } .ced-table .ced-num { min-width: 80px; text-align: right; } .ced-table .ced-cur { min-width: 56px; width: 56px; text-transform: uppercase; }
+        .ced-c { text-align: center; } .ced-act { white-space: nowrap; }
+        .ced-act button { background: none; border: 0; color: var(--text-sec); cursor: pointer; padding: 4px 6px; font-size: .85rem; }
+        .ced-act button:hover { color: var(--accent); }
+        .ced-hint, .ced-body p { font-size: .76rem; color: var(--text-sec); margin: 0; line-height: 1.45; }
+        .ced-body section { border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+        .ced-body h3 { margin: 0; font-size: .85rem; }
+        .ced-paste { width: 100%; font-family: var(--mono); font-size: .75rem; }
+        .ced-mode { font-size: .78rem; color: var(--text-sec); display: flex; gap: 6px; align-items: center; }
+        .ced-n { font: .65rem var(--mono); color: var(--text-sec); margin-left: 4px; }
+        .ced-src { display: flex; flex-direction: column; gap: 6px; font-size: .78rem; }
+        .ced-src code, .ced-hint code { word-break: break-all; font-size: .7rem; }
+        .ced-err { color: var(--err); }
+        .ced-foot { display: flex; gap: 8px; align-items: center; padding: 12px 16px; border-top: 1px solid var(--border); }
+        .ced-foot .sp { flex: 1; } .ced-note { font-size: .74rem; color: var(--text-sec); }
+        .rates-box { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; font-size: .78rem; }
+        .rates-box:empty { display: none; }
+        .fx-row { display: grid; grid-template-columns: 70px 1fr 40px; gap: 6px; align-items: center; font-family: var(--mono); font-size: .72rem; color: var(--text-sec); }
+        .fx-row .input { padding: 4px 7px; font-size: .75rem; font-family: var(--mono); }
+        .fx-meta { font: .66rem var(--mono); color: var(--text-sec); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .fx-link { background: none; border: 0; color: var(--accent); cursor: pointer; font: inherit; padding: 0; text-decoration: none; }
+        .fx-link[disabled] { opacity: .4; cursor: default; }
+        .fx-lock { font-size: .74rem; }
+        .disc-box { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+        .disc-box textarea { width: 100%; resize: vertical; font-size: .8rem; }
+        .disc-presets { display: flex; flex-wrap: wrap; gap: 4px; }
+        .print-foot { display: flex; gap: 18px; align-items: flex-start; margin-top: 18px; }
+        .print-notes { flex: 1; font-size: .74rem; color: var(--pp-muted); line-height: 1.5; }
+        .print-qr { text-align: center; font-size: .62rem; color: var(--pp-muted); max-width: 120px; }
+        .print-qr:empty { display: none; }
+        .print-qr img { display: block; margin: 0 auto 4px; image-rendering: pixelated; }
+        .qr-hint { font-size: .7rem; color: var(--text-sec); margin: 0; word-break: break-all; }
+        .ced-def { display: flex; gap: 6px; align-items: center; font-size: .72rem; color: var(--text-sec); }
+        .ced-def .input { width: 70px; min-width: 0; padding: 5px 7px; font-size: .78rem; }
+        .print-notes p { margin: 0 0 6px; white-space: pre-line; }
         .cat-grid { flex: 1; overflow-y: auto; padding: 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 12px; align-content: start; }
         .prod-card { border: 1px solid var(--border); border-radius: 8px; padding: 12px 12px 10px; background: var(--bg-elev); cursor: pointer; display: flex; flex-direction: column; gap: 5px; transition: border-color 0.15s, transform 0.1s; }
         .prod-card:hover { border-color: var(--accent); transform: translateY(-1px); }
@@ -171,6 +233,7 @@
                 <button type="button" class="cs-menu-item q-out" role="menuitem" onclick="sendEmail()"><span>📧</span> <span data-i18n>Email</span></button>
                 <div class="cs-menu-div"></div>
                 <button type="button" class="cs-menu-item" role="menuitem" onclick="document.getElementById('config-input').click()"><span>📂</span> <span data-i18n>Load config…</span> <span class="cs-menu-note">.json</span></button>
+                <button type="button" class="cs-menu-item" role="menuitem" onclick="QuoteCatalog.openEditor()"><span>✎</span> <span data-i18n>Edit catalog</span> <span class="cs-menu-note">.json · .csv</span></button>
                 <div class="cs-menu-div"></div>
                 <button type="button" class="cs-menu-item danger" role="menuitem" onclick="resetAll()"><span data-i18n>Reset All</span></button>
             </div>
@@ -193,6 +256,7 @@
                         <input class="input" type="number" id="global-vat" value="16">
                     </div>
                 </div>
+                <div id="rates-box" class="rates-box" translate="no"></div>
                 <div id="fiscal-box" class="fiscal-box" translate="no" style="display:none;"></div>
             </div>
 
@@ -213,6 +277,28 @@
                         <label for="q-valid" data-i18n>Valid Until</label>
                         <input class="input" type="date" id="q-valid">
                     </div>
+                </div>
+                <div class="check-row">
+                    <input type="checkbox" id="disc-on">
+                    <label for="disc-on" data-i18n>Add a disclaimer</label>
+                </div>
+                <div id="disc-box" class="disc-box" hidden>
+                    <textarea class="input" id="disc-text" rows="4" maxlength="2000"></textarea>
+                    <div class="disc-presets" id="disc-presets"></div>
+                </div>
+                <div class="check-row">
+                    <input type="checkbox" id="qr-on">
+                    <label for="qr-on" data-i18n>Add a QR code</label>
+                </div>
+                <div id="qr-box" class="disc-box" hidden>
+                    <select class="select" id="qr-target">
+                        <option value="catalog" data-i18n>Link to this catalog</option>
+                        <option value="website" data-i18n>Link to the website</option>
+                        <option value="custom" data-i18n>Another link</option>
+                    </select>
+                    <input class="input" id="qr-url" placeholder="https://" hidden>
+                    <input class="input" id="qr-caption" maxlength="60">
+                    <p class="qr-hint" id="qr-hint"></p>
                 </div>
             </div>
 
@@ -277,7 +363,7 @@
             </div>
 
             <div class="ws-rail-foot">
-                <p class="privacy-line"><span><span data-i18n>Runs in your browser. Nothing you add here is uploaded.</span> <span class="pl-also" data-i18n>Exchange rates come from frankfurter.app; nothing you type is sent.</span></span></p>
+                <p class="privacy-line"><span><span data-i18n>Runs in your browser. Nothing you add here is uploaded.</span> <span class="pl-also" data-i18n>Exchange rates come from the ECB (Frankfurter) and open.er-api.com; nothing you type is sent.</span></span></p>
             </div>
         </aside>
 
@@ -293,7 +379,7 @@
                     </div>
                 </div>
                 <div class="examples"><span class="ex-label" data-i18n>Try:</span><button type="button" class="chip-tag" id="heroExample" data-i18n>An example quote</button></div>
-                <p class="privacy-line"><span><span data-i18n>Runs in your browser. Nothing you add here is uploaded.</span> <span class="pl-also" data-i18n>Exchange rates come from frankfurter.app; nothing you type is sent.</span></span></p>
+                <p class="privacy-line"><span><span data-i18n>Runs in your browser. Nothing you add here is uploaded.</span> <span class="pl-also" data-i18n>Exchange rates come from the ECB (Frankfurter) and open.er-api.com; nothing you type is sent.</span></span></p>
             </div>
             <button type="button" class="cs-btn ws-toggle pane-toggle" id="paneToggle" data-ws-toggle aria-expanded="false">☰ <span data-i18n>Edit the quote</span></button>
             <div id="paper" class="paper" translate="no">
@@ -324,6 +410,7 @@
                     <tbody></tbody>
                     <tfoot></tfoot>
                 </table>
+                <div class="print-foot"><div id="print-notes" class="print-notes"></div><div id="print-qr" class="print-qr"></div></div>
             </div>
         </main>
     </div>
@@ -334,6 +421,7 @@
         <div class="cat-modal" role="dialog" aria-modal="true">
             <div class="cat-head">
                 <h2 data-i18n>Browse Catalog</h2>
+                <div id="cat-switch" class="cat-switch" role="group"></div>
                 <input type="text" id="cat-search" class="input cat-search" oninput="catState.q=this.value; renderCatalog();" autocomplete="off">
                 <button class="cat-close" onclick="closeCatalog()" aria-label="Close">&times;</button>
             </div>
@@ -734,12 +822,12 @@
                 "vatStripped": true
             },
 
-            // --- DICOM & MEDICAL IMAGING ---
+            // --- DICOM & MEDICAL IMAGING --- hidden by default (catalog.js); quoted after an assessment, so no prices
             {
                 "category": "DICOM & Medical Imaging",
                 "description": "PACS Deployment (store-only receiver)",
                 "provider": "Carino Systems",
-                "price": 200.00,
+                "price": null,
                 "currency": "USD",
                 "note": "Cross-platform receive + folder auto-forward node",
                 "vatStripped": false
@@ -748,7 +836,7 @@
                 "category": "DICOM & Medical Imaging",
                 "description": "DICOM Node Configuration",
                 "provider": "Carino Systems",
-                "price": 50.00,
+                "price": null,
                 "currency": "USD",
                 "note": "AE title, port, associations, C-STORE verification",
                 "vatStripped": true
@@ -757,7 +845,7 @@
                 "category": "DICOM & Medical Imaging",
                 "description": "DICOM Auto-Forward / Routing Rules",
                 "provider": "Carino Systems",
-                "price": 60.00,
+                "price": null,
                 "currency": "USD",
                 "note": "Folder-watch capture forwarded to destinations",
                 "vatStripped": true
@@ -766,7 +854,7 @@
                 "category": "DICOM & Medical Imaging",
                 "description": "DICOM Anonymization / De-identification",
                 "provider": "Carino Systems",
-                "price": 40.00,
+                "price": null,
                 "currency": "USD",
                 "note": "Batch tag scrubbing per de-id policy",
                 "vatStripped": true
@@ -775,7 +863,7 @@
                 "category": "DICOM & Medical Imaging",
                 "description": "Modality Worklist (MWL) Setup",
                 "provider": "Carino Systems",
-                "price": 80.00,
+                "price": null,
                 "currency": "USD",
                 "note": "Worklist SCP integration with RIS/HIS",
                 "vatStripped": false
@@ -784,7 +872,7 @@
                 "category": "DICOM & Medical Imaging",
                 "description": "DICOM Viewer Deployment",
                 "provider": "Carino Systems",
-                "price": 70.00,
+                "price": null,
                 "currency": "USD",
                 "note": "Web/desktop viewer install, layout & hanging protocols",
                 "vatStripped": false
@@ -793,7 +881,7 @@
                 "category": "DICOM & Medical Imaging",
                 "description": "DICOM Tag Editing / Batch Correction",
                 "provider": "Carino Systems",
-                "price": 35.00,
+                "price": null,
                 "currency": "USD",
                 "note": "Bulk study/series metadata fixes",
                 "vatStripped": true
@@ -802,7 +890,7 @@
                 "category": "DICOM & Medical Imaging",
                 "description": "Study Migration (PACS to PACS)",
                 "provider": "Carino Systems",
-                "price": 120.00,
+                "price": null,
                 "currency": "USD",
                 "note": "Bulk C-MOVE/export with integrity check",
                 "vatStripped": true
@@ -811,7 +899,7 @@
                 "category": "DICOM & Medical Imaging",
                 "description": "Imaging Workstation Setup",
                 "provider": "Carino Systems",
-                "price": 90.00,
+                "price": null,
                 "currency": "USD",
                 "note": "Display calibration, viewer, DICOM connectivity",
                 "vatStripped": false
@@ -904,6 +992,53 @@
         ]
         };
 
+
+        // --- 1b. PRODUCT-LINE CATALOGS ---
+        // Opened with ?catalog=retina | pacs | infra (the links and QR codes on Carino's printed
+        // offers), or from the switcher in the catalog browser. Prices are MXN before IVA.
+        // price: null = quoted after an on-site assessment; the browser shows no amount.
+        const LINE_CATALOGS = {
+            retina: { label: "Retina", items: [
+                { category: "Retina", description: "Retina — uso libre", provider: "Carino Systems", price: 0, currency: "MXN",
+                  note: "En el navegador, sin instalación. Refracción, entrega de lentes y anotación de fondo de ojo; nada se sube a Carino." },
+                { category: "Retina", description: "Instalación de Retina en PC (óptica o centro de optometría)", provider: "Carino Systems", price: 4900, currency: "MXN",
+                  note: "Instalación en su equipo, reportes con la marca de la clínica, respaldo cifrado y 1 h de capacitación." },
+                { category: "Retina", description: "Soporte anual Retina en PC", provider: "Carino Systems", price: 6900, currency: "MXN",
+                  note: "Actualizaciones, ayuda por WhatsApp y correo, revisión del respaldo." },
+                { category: "Retina", description: "Instalación piloto (primeras tres ópticas)", provider: "Carino Systems", price: 2500, currency: "MXN",
+                  note: "Primer año de soporte sin costo a cambio de una referencia por escrito y una revisión a 30 días." },
+                { category: "Retina Clínica", description: "Retina Clínica: archivo único y visor en cada consultorio", provider: "Carino Systems", price: null, currency: "MXN",
+                  note: "Para clínicas y centros de diagnóstico con 2 o más equipos o varios médicos. Se cotiza tras una visita." },
+            ] },
+            pacs: { label: "PACS", items: [
+                { category: "Diagnóstico", description: "Visita de diagnóstico del flujo de imágenes", provider: "Carino Systems", price: 0, currency: "MXN",
+                  note: "Sin costo: qué equipos tienen, dónde quedan hoy los estudios y cómo llegan al médico que los pide." },
+                { category: "Veterinaria", description: "Archivo local, respaldo y reenvío a especialistas (un sitio, DR)", provider: "Carino Systems", price: null, currency: "MXN",
+                  note: "Carino DICOM en su propio equipo. No es un dispositivo médico ni sirve para diagnóstico primario." },
+                { category: "Veterinaria", description: "Archivo multi-sede con reenvío automático a referentes (CT/RM)", provider: "Carino Systems", price: null, currency: "MXN",
+                  note: "Para hospitales con tomografía o resonancia, o de 2 a 4 sedes." },
+                { category: "Dental", description: "Gateway DICOM para centro CBCT / panorámica", provider: "Carino Systems", price: null, currency: "MXN",
+                  note: "Envía cada estudio al dentista que lo pidió, sin USB ni WhatsApp, y lo guarda en un archivo." },
+                { category: "Ultrasonido", description: "Captura, archivo y reenvío para clínica de ultrasonido", provider: "Carino Systems", price: null, currency: "MXN",
+                  note: "Captura desde equipos que solo imprimen o desde DICOM; retención larga." },
+                { category: "Soporte", description: "Soporte anual de Carino DICOM", provider: "Carino Systems", price: null, currency: "MXN",
+                  note: "Actualizaciones, monitoreo del archivo y prueba de restauración." },
+            ] },
+            infra: { label: "Infraestructura", items: [
+                { category: "Soporte", description: "Soporte técnico a domicilio (por visita)", provider: "Carino Systems", price: 500, currency: "MXN",
+                  note: "Desde 500 y hasta 1,500 según el trabajo: formateo, PC lenta, Wi-Fi y router, impresoras, respaldos, Linux. Pago al terminar." },
+                { category: "Revisión de TI", description: "Revisión de TI para PyMEs — hasta 15 equipos", provider: "Carino Systems", price: 9500, currency: "MXN",
+                  note: "Mapa de red, exposición a vulnerabilidades, prueba de restauración de respaldos, datos personales (LFPDPPP), registro electrónico de jornada y conmutador." },
+                { category: "Revisión de TI", description: "Revisión de TI — 16 a 50 equipos o varias sedes", provider: "Carino Systems", price: 18000, currency: "MXN",
+                  note: "Desde 18,000 y hasta 25,000 según sedes y equipos. Mismo alcance que la revisión pequeña." },
+                { category: "Mantenimiento", description: "Mantenimiento mensual", provider: "Carino Systems", price: 2500, currency: "MXN",
+                  note: "Desde 2,500 y hasta 6,000 al mes, después de una revisión." },
+                { category: "Capacitación", description: "Capacitación de media jornada", provider: "Carino Systems", price: 3500, currency: "MXN",
+                  note: "Linux, Git, redes o seguridad básica. Desde 3,500 y hasta 6,000." },
+            ] },
+        };
+        const GENERAL_CATALOG = DEFAULT_CONFIG.catalog;
+
         const DEFAULT_CURRENCIES = ["USD", "MXN", "CAD", "JPY"];
 
         // --- 2. STATE ---
@@ -935,6 +1070,7 @@
 
             // B. Overwrite with LocalStorage if exists (Persistence)
             loadState();
+            const catBoot = QuoteCatalog.boot();
 
             // C. Setup System (language itself is owned by carino-lang.js + i18n.js;
             // here we only fold any config-supplied dictionary into I18N)
@@ -949,6 +1085,7 @@
             receiveFiscalCard();
             await fetchRates();
             renderTable();
+            QuoteCatalog.afterBoot(catBoot);
 
             // Close the catalog browser on Escape.
             document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeCatalog(); });
@@ -1101,7 +1238,7 @@
 
         function saveState() {
             // Persist a lean subset (skip transient rates / logo data-URI / editing flag).
-            const { rates, ratesOk, ratesDate, editingId, config, ...rest } = appState;
+            const { rates, ratesOk, ratesDate, fxLive, editingId, config, ...rest } = appState;
             const { logoData, logoAspect, ...cfg } = config;
             localStorage.setItem('quoteConfig', JSON.stringify({ ...rest, config: cfg }));
         }
@@ -1166,6 +1303,38 @@
             if (qn) { qn.value = appState.meta.quoteNo || ''; qn.oninput = (e) => { appState.meta.quoteNo = e.target.value; saveState(); renderTable(); }; }
             if (qv) { qv.value = appState.meta.validUntil || ''; qv.oninput = (e) => { appState.meta.validUntil = e.target.value; saveState(); renderTable(); }; }
 
+            // Disclaimer: off by default; the text is kept when it is switched off.
+            const disc = appState.config.disclaimer || (appState.config.disclaimer = { on: false, text: '' });
+            const don = document.getElementById('disc-on'), dtx = document.getElementById('disc-text'), dbox = document.getElementById('disc-box');
+            don.checked = !!disc.on; dbox.hidden = !disc.on; dtx.value = disc.text || '';
+            dtx.placeholder = t('E.g. prices before VAT; valid for 30 days; 50 % deposit on acceptance.');
+            don.onchange = () => { disc.on = don.checked; dbox.hidden = !disc.on; if (disc.on && !dtx.value) dtx.focus(); saveState(); renderTable(); };
+            dtx.oninput = () => { disc.text = dtx.value; saveState(); renderTable(); };
+            const PRESETS = [
+                [t('Validity'), t('This quotation is valid for 30 days from its date.')],
+                [t('VAT'), t('Prices are before VAT unless stated otherwise.')],
+                [t('Deposit'), t('A 50 % deposit confirms the order; the balance is due on delivery.')],
+                [t('Exchange rate'), t('Amounts in other currencies are converted at the reference rate shown; the rate on the payment date applies.')],
+            ];
+            document.getElementById('disc-presets').innerHTML = PRESETS.map((p, i) => `<button type="button" class="chip-tag" data-dp="${i}">+ ${escapeHtml(p[0])}</button>`).join('');
+            document.getElementById('disc-presets').onclick = e => {
+                const b = e.target.closest('[data-dp]'); if (!b) return;
+                const line = PRESETS[+b.dataset.dp][1];
+                if (!dtx.value.includes(line)) { dtx.value = (dtx.value.trim() ? dtx.value.trim() + '\n' : '') + line; dtx.oninput(); }
+            };
+
+            // QR code: off by default; points at the active catalog unless told otherwise.
+            const qrc = appState.config.qr || (appState.config.qr = { on: false, target: 'catalog', url: '', caption: '' });
+            const qon = document.getElementById('qr-on'), qbox = document.getElementById('qr-box'), qtg = document.getElementById('qr-target'),
+                  qurl = document.getElementById('qr-url'), qcap = document.getElementById('qr-caption');
+            qon.checked = !!qrc.on; qbox.hidden = !qrc.on; qtg.value = qrc.target; qurl.value = qrc.url || ''; qcap.value = qrc.caption || '';
+            qurl.hidden = qrc.target !== 'custom'; qcap.placeholder = t('Caption (optional)');
+            const qsave = () => { qbox.hidden = !qrc.on; qurl.hidden = qrc.target !== 'custom'; saveState(); renderTable(); };
+            qon.onchange = () => { qrc.on = qon.checked; qsave(); };
+            qtg.onchange = () => { qrc.target = qtg.value; qsave(); };
+            qurl.oninput = () => { qrc.url = qurl.value.trim(); qsave(); };
+            qcap.oninput = () => { qrc.caption = qcap.value; qsave(); };
+
             loadLogoData();
             renderFiscalBox();
         }
@@ -1184,6 +1353,7 @@
                 if (!f) return;
                 e.preventDefault();
                 if (/\.json$/i.test(f.name) || f.type === 'application/json') processConfigFile(f);
+                else if (/\.csv$/i.test(f.name)) f.text().then(txt => QuoteCatalog.importInEditor(txt, f.name));
                 else catToast(t('Drop a config file (.json) to load it'), 'err');
             });
         }
@@ -1196,6 +1366,7 @@
 
                     // Use the shared apply function
                     applyConfig(json);
+                    if (Array.isArray(json.catalog) || json.appType === 'carino_quote_catalog') QuoteCatalog.adopt(json);
                     mergeCustomDictionary();
 
                     saveState();
@@ -1246,6 +1417,8 @@
             appState.catalog.forEach(it => map.set(it.category, (map.get(it.category) || 0) + 1));
             return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
         }
+        // Hidden categories (catalog.js) drop out of "All" and the rail unless "Show hidden" is on.
+        const catShown = it => catState.showHidden || !QuoteCatalog.isHidden(it.category);
 
         function renderCatalog() {
             // Category rail (with counts). Built via DOM so category names with
@@ -1259,8 +1432,27 @@
                 b.onclick = () => setCatFilter(value);
                 rail.appendChild(b);
             };
-            mkRailBtn(t('All'), appState.catalog.length, '__all');
-            catCategories().forEach(([name, count]) => mkRailBtn(name, count, name));
+            QuoteCatalog.renderSwitch();
+            mkRailBtn(t('All'), appState.catalog.filter(catShown).length, '__all');
+            const cats = catCategories(), hiddenN = cats.filter(([name]) => QuoteCatalog.isHidden(name)).length;
+            cats.forEach(([name, count]) => {
+                const hid = QuoteCatalog.isHidden(name);
+                if (hid && !catState.showHidden) return;
+                mkRailBtn(name, count, name);
+                const b = rail.lastChild;
+                if (hid) b.classList.add('is-hidden');
+                const eye = document.createElement('span');
+                eye.className = 'cat-eye'; eye.dataset.catHide = name; eye.setAttribute('role', 'button');
+                eye.title = hid ? t('Show this category') : t('Hide this category');
+                eye.textContent = hid ? '◌' : '●';
+                b.appendChild(eye);
+            });
+            if (hiddenN || catState.showHidden) {
+                const sh = document.createElement('button');
+                sh.className = 'cat-showhidden'; sh.dataset.catShowhidden = '1';
+                sh.textContent = (catState.showHidden ? t('Hide hidden categories') : t('Show hidden categories')) + (hiddenN ? ` (${hiddenN})` : '');
+                rail.appendChild(sh);
+            }
 
             // Product grid (category filter + free-text search over desc/provider/note)
             const q = catState.q.trim().toLowerCase();
@@ -1268,7 +1460,7 @@
             const matches = appState.catalog
                 .map((it, i) => ({ it, i }))
                 .filter(({ it }) =>
-                    (catState.cat === '__all' || it.category === catState.cat) &&
+                    (catState.cat === '__all' ? catShown(it) : it.category === catState.cat) &&
                     (!q || (it.description || '').toLowerCase().includes(q)
                          || (it.provider || '').toLowerCase().includes(q)
                          || (it.note || '').toLowerCase().includes(q)));
@@ -1283,7 +1475,7 @@
                     <div class="pc-desc">${escapeHtml(it.description || '')}</div>
                     ${it.note ? `<div class="pc-note">${escapeHtml(it.note)}</div>` : ''}
                     <div class="pc-foot">
-                        <span class="pc-price">${(+it.price || 0).toFixed(2)} ${escapeHtml(it.currency || 'USD')}</span>
+                        <span class="pc-price">${it.price == null ? escapeHtml(t('Price after assessment')) : it.price === 0 ? escapeHtml(t('No charge')) : `${(+it.price || 0).toFixed(2)} ${escapeHtml(it.currency || 'USD')}`}</span>
                         ${it.vatStripped ? `<span class="pc-vat">${t('incl. VAT')}</span>` : ''}
                     </div>
                     <button class="pc-add" onclick="event.stopPropagation(); quickAddCatalog(${i})">+ ${t('Add Item')}</button>
@@ -1295,13 +1487,14 @@
             const it = appState.catalog[idx];
             if (!it) return;
             document.getElementById('description').value = it.description || '';
-            document.getElementById('price').value = it.price || '';
+            document.getElementById('price').value = it.price == null ? '' : (it.price || '');
             document.getElementById('quantity').value = 1;
             document.getElementById('item-currency').value = it.currency || appState.config.targetCurrency;
             document.getElementById('provider').value = it.provider || '';
             document.getElementById('link').value = it.link || '';
             document.getElementById('notes').value = it.note || '';
             document.getElementById('remove-vat').checked = it.vatStripped || false;
+            catPending = { desc: it.description || '', cat: QuoteCatalog.stamp() };
             closeCatalog();
             document.getElementById('description').focus();
         }
@@ -1316,7 +1509,8 @@
                 desc: it.description || '', price: +it.price || 0, qty: 1,
                 currency: it.currency || appState.config.targetCurrency,
                 provider: it.provider || '', link: it.link || '',
-                note: it.note || '', stripVat: it.vatStripped || false
+                note: it.note || '', stripVat: it.vatStripped || false,
+                cat: QuoteCatalog.stamp()
             });
             saveState();
             renderTable();
@@ -1332,6 +1526,7 @@
             t._to = setTimeout(() => t.classList.remove('show'), 1800);
         }
 
+        let catPending = null;   // the catalog stamp of the card that last filled the form
         function handleUpsert() {
             const desc = document.getElementById('description').value;
             const price = parseFloat(document.getElementById('price').value);
@@ -1348,6 +1543,10 @@
                 note: document.getElementById('notes').value,
                 stripVat: document.getElementById('remove-vat').checked
             };
+            const prev = appState.editingId && appState.items.find(i => i.id === appState.editingId);
+            if (catPending && catPending.desc === desc) itemData.cat = catPending.cat;
+            else if (prev && prev.cat && prev.desc === desc) itemData.cat = prev.cat;
+            catPending = null;
 
             if (appState.editingId) {
                 const index = appState.items.findIndex(i => i.id === appState.editingId);
@@ -1426,49 +1625,82 @@
         document.getElementById('resetDlg').addEventListener('click', (e) => { if (e.target.id === 'resetDlg') closeReset(); });
 
         // --- MATH & RENDER ---
-        async function fetchRates() {
-            const base = appState.config.targetCurrency;
-            const CACHE_KEY = 'quoteRates';
-            // Serve a fresh cache (< 12h, same base) without hitting the network.
-            try {
-                const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
-                if (c && c.base === base && (Date.now() - c.ts) < 12 * 3600 * 1000) {
-                    appState.rates = c.rates; appState.ratesOk = true; appState.ratesDate = c.date || null;
-                    renderRatesWarning(); return;
-                }
-            } catch (e) {}
-            // A blackholed or captive-portal-intercepted host would otherwise hang
-            // on the browser's own connection timeout; the catch below already
-            // knows how to fall back, so an abort simply lands there sooner.
-            const ctl = new AbortController();
-            const kill = setTimeout(() => ctl.abort(), 8000);
-            try {
-                // Frankfurter: free, CORS-open, ECB reference rates. rates[X] = X per 1 base.
-                const res = await fetch(`https://api.frankfurter.app/latest?from=${encodeURIComponent(base)}`, { signal: ctl.signal });
-                if (!res.ok) throw new Error('rate http ' + res.status);
-                const data = await res.json();
-                appState.rates = data.rates || {};
-                appState.rates[base] = 1;
-                appState.ratesOk = true;
-                appState.ratesDate = data.date || null;
-                localStorage.setItem(CACHE_KEY, JSON.stringify({ base, rates: appState.rates, date: data.date, ts: Date.now() }));
-            } catch (e) {
-                let cached = null;
-                try { cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); } catch (_) {}
-                if (cached && cached.base === base) { appState.rates = cached.rates; appState.ratesDate = cached.date; appState.ratesOk = true; }
-                else { appState.rates = {}; appState.ratesOk = false; }
-            } finally { clearTimeout(kill); }
+        // Rates come from carino-fx.js: ECB reference rates (Frankfurter), open.er-api.com for the gaps, one
+        // snapshot shared across *.carino.systems. A quote can freeze the rates it was priced with (meta.fx),
+        // and any rate can be typed by hand (meta.fxManual, e.g. the DOF FIX for USD in Mexico).
+        async function fetchRates(force) {
+            const need = [...new Set([appState.config.targetCurrency].concat(appState.items.map(i => i.currency)))];
+            const snap = window.CarinoFX ? await CarinoFX.latest({ need, force: !!force }) : null;
+            appState.fxLive = snap;
+            appState.ratesOk = !!snap;
+            appState.ratesDate = snap ? snap.d : null;
+            renderRatesBox();
             renderRatesWarning();
+        }
+        // The snapshot used for this quote: a locked one wins over the live one.
+        function fxSnap() { return (appState.meta && appState.meta.fx) || appState.fxLive || null; }
+        // Units of `to` per 1 `from`, or null when unknown.
+        function rateOf(from, to) {
+            if (from === to) return 1;
+            const man = (appState.meta && appState.meta.fxManual) || {};
+            // Manual rates are written as "1 <currency> = x <target>".
+            if (to === appState.config.targetCurrency && man[from] > 0) return +man[from];
+            if (from === appState.config.targetCurrency && man[to] > 0) return 1 / man[to];
+            return window.CarinoFX ? CarinoFX.rate(fxSnap(), from, to) : null;
+        }
+        // Currencies on the quote that are not the target one, with the rate used for each.
+        function fxUsed() {
+            const target = appState.config.targetCurrency, snap = fxSnap(), man = (appState.meta && appState.meta.fxManual) || {};
+            return [...new Set(appState.items.map(i => i.currency))].filter(c => c && c !== target).map(c => ({
+                code: c, rate: rateOf(c, target),
+                // A cross rate is only as official as its weaker leg: name both sources when they differ.
+                src: man[c] > 0 ? t('manual') : !window.CarinoFX ? ''
+                    : [...new Set([CarinoFX.describe(snap, c), CarinoFX.describe(snap, target)])].join(' + '),
+            }));
+        }
+        function fxLine() {
+            const used = fxUsed(); if (!used.length) return '';
+            const snap = fxSnap(), target = appState.config.targetCurrency;
+            const parts = used.map(u => u.rate ? `1 ${u.code} = ${u.rate.toFixed(u.rate < 0.1 ? 6 : 4)} ${target} (${u.src})` : `1 ${u.code} = ? ${target}`);
+            return t('Exchange rate') + ': ' + parts.join(' · ') + (snap && snap.d ? ` · ${snap.d}` : '');
+        }
+        function renderRatesBox() {
+            const box = document.getElementById('rates-box'); if (!box) return;
+            const snap = fxSnap(), live = appState.fxLive, target = appState.config.targetCurrency;
+            const locked = !!(appState.meta && appState.meta.fx);
+            const show = ['USD', 'EUR', 'MXN', 'CAD'].filter(c => c !== target).slice(0, 2);
+            const used = fxUsed().map(u => u.code), list = [...new Set(used.concat(show))].slice(0, 4);
+            const man = (appState.meta && appState.meta.fxManual) || {};
+            const rows = list.map(c => {
+                const r = rateOf(c, target);
+                return `<div class="fx-row"><span>1 ${escapeHtml(c)} =</span><input class="input fx-man" data-fx="${escapeHtml(c)}" inputmode="decimal" value="${man[c] > 0 ? man[c] : ''}" placeholder="${r ? r.toFixed(4) : '—'}" title="${escapeHtml(t('Type a rate to use it instead of the published one'))}"><span>${escapeHtml(target)}</span></div>`;
+            }).join('');
+            const when = snap ? `${snap.d || ''} · ${snap.s === 'ER' ? 'open.er-api.com' : 'ECB'}${(snap.e || []).length && snap.s !== 'ER' ? ' + open.er-api.com' : ''}` : t('No rates yet');
+            box.innerHTML = `${rows}
+                <div class="fx-meta">${escapeHtml(when)}${locked ? ' · <b>' + escapeHtml(t('locked')) + '</b>' : ''}
+                    <button type="button" class="fx-link" id="fx-refresh" ${locked ? 'disabled' : ''} title="${escapeHtml(t('Fetch the latest rates'))}">↻</button>
+                    <a class="fx-link" href="https://currency.carino.systems/?base=${encodeURIComponent(target)}" target="_blank" rel="noopener">${escapeHtml(t('Trends'))} ↗</a></div>
+                <label class="check-row fx-lock"><input type="checkbox" id="fx-lock" ${locked ? 'checked' : ''} ${!snap ? 'disabled' : ''}> <span>${escapeHtml(t('Lock these rates on this quote'))}</span></label>`;
+            box.querySelector('#fx-refresh').onclick = () => fetchRates(true).then(renderTable);
+            box.querySelector('#fx-lock').onchange = e => {
+                appState.meta.fx = e.target.checked ? JSON.parse(JSON.stringify(appState.fxLive || fxSnap())) : null;
+                saveState(); renderRatesBox(); renderTable();
+            };
+            box.querySelectorAll('.fx-man').forEach(inp => inp.onchange = () => {
+                const v = parseFloat(String(inp.value).replace(',', '.'));
+                appState.meta.fxManual = Object.assign({}, appState.meta.fxManual, { [inp.dataset.fx]: v > 0 ? v : undefined });
+                saveState(); renderRatesBox(); renderTable();
+            });
         }
 
         function renderRatesWarning() {
             const el = document.getElementById('rates-warn');
             if (!el) return;
             const target = appState.config.targetCurrency;
-            const mixed = appState.items.some(i => i.currency !== target);
-            if (!appState.ratesOk && mixed) {
+            const unknown = fxUsed().filter(u => !u.rate).map(u => u.code);
+            if (unknown.length) {
                 el.style.display = 'block';
-                el.innerText = '\u26A0 ' + t('Live exchange rates unavailable — converted amounts may be inaccurate.');
+                el.innerText = '\u26A0 ' + t('No exchange rate for') + ' ' + unknown.join(', ') + '. ' + t('Type one in the rates box; until then those items count at 1:1.');
             } else {
                 el.style.display = 'none';
             }
@@ -1498,9 +1730,8 @@
         }
 
         function getRate(from, to) {
-            if (from === to) return 1;
-            const r = appState.rates[from];
-            return r ? (1/r) : 1;
+            const r = rateOf(from, to);
+            return r == null ? 1 : r;
         }
 
         function renderTable() {
@@ -1540,7 +1771,7 @@
                     <td><strong>${escapeHtml(item.desc)}</strong>${item.note ? `<span class="note">${escapeHtml(item.note)}</span>` : ''}</td>
                     <td>
                         <div>${escapeHtml(item.provider || '-')}</div>
-                        ${item.link ? `<a href="${escapeAttr(item.link)}" target="_blank" rel="noopener" class="provider-link" onclick="event.stopPropagation()">${t('Link')} ↗</a>` : ''}
+                        ${QuoteCatalog.safeLink(item.link) ? `<a href="${escapeAttr(item.link)}" target="_blank" rel="noopener" class="provider-link" onclick="event.stopPropagation()">${t('Link')} ↗</a>` : ''}
                     </td>
                     <td class="numeric">${netUnit.toFixed(2)} ${targetCurr}${origNote}</td>
                     <td class="numeric"><strong>${lineNet.toFixed(2)} ${targetCurr}</strong></td>
@@ -1578,7 +1809,49 @@
                     : '';
             }
 
+            const notes = document.getElementById('print-notes');
+            if (notes) {
+                const fx = fxLine(), d = disclaimerText(), rv = QuoteCatalog.revisionLine(appState.items);
+                notes.innerHTML = (fx ? `<p class="print-fx">${escapeHtml(fx)}</p>` : '') + (rv ? `<p class="print-rev">${escapeHtml(rv)}</p>` : '') + (d ? `<p class="print-disclaimer">${escapeHtml(d)}</p>` : '');
+            }
+            const pq = document.getElementById('print-qr');
+            if (pq) {
+                const q = qrTarget();
+                pq.innerHTML = q ? `<img src="${qrPng(q.url, 240)}" alt="${escapeAttr(q.url)}" width="96" height="96"><span>${escapeHtml(q.caption)}</span>` : '';
+                renderQrHint(q);
+            }
             renderRatesWarning();
+            renderRatesBox();
+        }
+        // The optional QR code: the active catalog's link, the org's website, or any https link.
+        function qrTarget() {
+            const q = appState.config.qr; if (!q || !q.on) return null;
+            let url = '', cap = q.caption || '';
+            if (q.target === 'catalog') { url = QuoteCatalog.shareUrl() || ''; cap = cap || t('Catalog and prices'); }
+            else if (q.target === 'website') { url = appState.config.url || ''; cap = cap || url.replace(/^https?:\/\//, '').replace(/\/$/, ''); }
+            else { url = QuoteCatalog.safeLink(q.url); cap = cap || url.replace(/^https?:\/\//, ''); }
+            return url ? { url, caption: cap } : null;
+        }
+        function renderQrHint(q) {
+            const h = document.getElementById('qr-hint'), c = appState.config.qr; if (!h || !c) return;
+            h.textContent = !c.on ? '' : q ? q.url
+                : c.target === 'catalog' ? t('My catalog lives only in this browser: publish it (Edit catalog › Import & share) to link to it.')
+                : t('Type an https:// link.');
+        }
+        // PNG data URL (jsPDF and html2canvas both take it), black on white with a quiet zone.
+        function qrPng(text, px) {
+            const qr = qrcode(0, 'M'); qr.addData(unescape(encodeURIComponent(text))); qr.make();
+            const n = qr.getModuleCount(), quiet = 2, cell = Math.max(1, Math.floor(px / (n + quiet * 2)));
+            const c = document.createElement('canvas'); c.width = c.height = cell * (n + quiet * 2);
+            const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.fillStyle = '#000';
+            for (let r = 0; r < n; r++) for (let k = 0; k < n; k++) if (qr.isDark(r, k)) g.fillRect((k + quiet) * cell, (r + quiet) * cell, cell, cell);
+            return c.toDataURL('image/png');
+        }
+
+        // The custom disclaimer, when its toggle is on.
+        function disclaimerText() {
+            const d = appState.config.disclaimer;
+            return d && d.on && d.text ? String(d.text).trim() : '';
         }
 
         // --- EXPORTS ---
@@ -1611,6 +1884,9 @@
                 { [t('Description')]: `${t('VAT')} (${vatPct}%)`, [`${t('Amount (net)')} (${targetCurr})`]: +vatAmount.toFixed(2) },
                 { [t('Description')]: t('TOTAL (Inc. VAT)'), [`${t('Amount (net)')} (${targetCurr})`]: +(subtotal + vatAmount).toFixed(2) }
             );
+            if (fxLine()) data.push({}, { [t('Description')]: fxLine() });
+            if (QuoteCatalog.revisionLine(appState.items)) data.push({ [t('Description')]: QuoteCatalog.revisionLine(appState.items) });
+            if (disclaimerText()) data.push({}, { [t('Description')]: disclaimerText() });
             // The issuer's tax block goes in as raw rows above the table, not as
             // another data key: json_to_sheet derives its header from the union of
             // the row keys, so a fiscal key would become a spurious first column.
@@ -1715,7 +1991,7 @@
                 const netUnit = netUnitSrc * rate;
                 const lineNet = netUnit * qty;
                 subtotal += lineNet;
-                return [qty, i.desc, i.provider || '', i.link || '', `${netUnit.toFixed(2)} ${targetCurr}`, `${lineNet.toFixed(2)} ${targetCurr}`];
+                return [qty, i.desc, i.provider || '', QuoteCatalog.safeLink(i.link), `${netUnit.toFixed(2)} ${targetCurr}`, `${lineNet.toFixed(2)} ${targetCurr}`];
             });
             const vatAmount = subtotal * (vatPct/100);
             const total = subtotal + vatAmount;
@@ -1739,6 +2015,23 @@
                     }
                 }
             });
+            const notes = [fxLine(), QuoteCatalog.revisionLine(appState.items), disclaimerText()].filter(Boolean), qr = qrTarget();
+            let y = doc.lastAutoTable.finalY + 8;
+            if (qr && y + 32 > 290) { doc.addPage(); y = 16; }
+            if (qr) {
+                doc.addImage(qrPng(qr.url, 300), 'PNG', 168, y - 2, 28, 28);
+                doc.setFontSize(7); doc.setTextColor(90);
+                doc.splitTextToSize(qr.caption, 34).slice(0, 2).forEach((ln, i) => doc.text(ln, 182, y + 30 + i * 3, { align: 'center' }));
+                doc.link(168, y - 2, 28, 28, { url: qr.url });
+            }
+            if (notes.length) {
+                doc.setFontSize(8); doc.setTextColor(90);
+                notes.forEach(n => doc.splitTextToSize(n, qr ? 148 : 182).forEach(ln => {
+                    if (y > 285) { doc.addPage(); y = 16; }
+                    doc.text(ln, 14, y); y += 4;
+                }));
+            }
+            doc.setTextColor(0);
             doc.save('quote.pdf');
         }
 
@@ -1768,6 +2061,10 @@
             body += `\n${t('TOTAL (Inc. VAT)')}: ${(subtotal + vatAmount).toFixed(2)} ${targetCurr}`;
             // After the totals, where it reads as the issuer signing off rather
             // than as part of the recipient's details.
+            if (fxLine()) body += `\n\n${fxLine()}`;
+            if (QuoteCatalog.revisionLine(appState.items)) body += `\n${QuoteCatalog.revisionLine(appState.items)}`;
+            if (disclaimerText()) body += `\n\n${disclaimerText()}`;
+            if (qrTarget()) body += `\n\n${qrTarget().caption}: ${qrTarget().url}`;
             const fis = fiscalCard();
             if (fis) body += `\n\n${fis.label || fis.country || ''}\n${fis.lines.join('\n')}`;
             const subject = `${appState.config.orgName} - ${t('Quote')}`;
@@ -1808,6 +2105,7 @@
             if (modal && modal.classList.contains('open')) renderCatalog();
         };
     </script>
+  <script src="catalog.js"></script>
   <script src="carino-bridge.js" defer></script>
 <script src="carino-navbar.js" data-app="Quote" data-repo="Quote" defer></script>
   <script src="carino-lang.js" defer></script>

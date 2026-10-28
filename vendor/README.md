@@ -11,8 +11,8 @@ is not the same as shipping it: MIT and BSD both require the permission text
 itself to travel with a copy, and most minified bundles drop it. Where a bundle
 does carry the full text inline, the row says so and no separate file is needed.
 
-Four libraries: one to read and write spreadsheets, three to render a quote to
-PDF.
+Five libraries: one to read and write spreadsheets, three to render a quote to
+PDF, and one to draw the optional QR code on it.
 
 ## What is here, and under what licence
 
@@ -22,6 +22,7 @@ PDF.
 | `jspdf.umd.min.js` | [jsPDF](https://github.com/parallax/jsPDF) | 2.5.1 | MIT | **Inline** — `@license` block carries the full MIT text |
 | `jspdf.plugin.autotable.min.js` | [jsPDF-AutoTable](https://github.com/simonbengtsson/jsPDF-AutoTable) | 3.5.28 | MIT | [`LICENSE-jspdf-autotable.txt`](LICENSE-jspdf-autotable.txt) — header names MIT, omits the permission text |
 | `html2canvas.min.js` | [html2canvas](https://html2canvas.hertzen.com) | 1.4.1 | MIT | [`LICENSE-html2canvas.txt`](LICENSE-html2canvas.txt) — same |
+| `qrcode-generator-1.4.4.min.js` | [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) | 1.4.4 | MIT | [`LICENSE-qrcode-generator.txt`](LICENSE-qrcode-generator.txt), © 2009 Kazuhiko Arase |
 
 Originally sourced from `cdnjs.cloudflare.com`.
 
