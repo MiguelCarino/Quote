@@ -10,6 +10,9 @@
 
 const I18N = {
     es: {
+        "Price list": "Lista de precios",
+        "Nothing to print: every category is hidden": "Nada que imprimir: todas las categorías están ocultas",
+        "Print this catalog as a price list (hidden categories are left out)": "Imprimir este catálogo como lista de precios (sin las categorías ocultas)",
         'rev.': 'rev.',
         "Use the catalog's defaults?": "¿Usar los valores del catálogo?",
         "The items already on the quote are converted, not removed.": "Los conceptos que ya están en la cotización se convierten, no se eliminan.",
@@ -210,6 +213,9 @@ const I18N = {
         'Live exchange rates unavailable — converted amounts may be inaccurate.': 'Tipos de cambio no disponibles: los importes convertidos pueden ser inexactos.',
     },
     'pt-BR': {
+        "Price list": "Lista de preços",
+        "Nothing to print: every category is hidden": "Nada para imprimir: todas as categorias estão ocultas",
+        "Print this catalog as a price list (hidden categories are left out)": "Imprimir este catálogo como lista de preços (sem as categorias ocultas)",
         'rev.': 'rev.',
         "Use the catalog's defaults?": "Usar os padrões do catálogo?",
         "The items already on the quote are converted, not removed.": "Os itens que já estão no orçamento são convertidos, não removidos.",
@@ -406,6 +412,9 @@ const I18N = {
         'Live exchange rates unavailable — converted amounts may be inaccurate.': 'Câmbio ao vivo indisponível: os valores convertidos podem estar imprecisos.',
     },
     ja: {
+        "Price list": "価格表",
+        "Nothing to print: every category is hidden": "印刷するものがありません：すべてのカテゴリが非表示です",
+        "Print this catalog as a price list (hidden categories are left out)": "このカタログを価格表として印刷（非表示カテゴリは除外）",
         'rev.': '版',
         "Use the catalog's defaults?": "カタログの既定値を使いますか？",
         "The items already on the quote are converted, not removed.": "見積もりにある項目は削除されず換算されます。",
@@ -602,6 +611,9 @@ const I18N = {
         'Live exchange rates unavailable — converted amounts may be inaccurate.': '為替レートを取得できません — 換算額が不正確な場合があります。',
     },
     ru: {
+        "Price list": "Прайс-лист",
+        "Nothing to print: every category is hidden": "Нечего печатать: все категории скрыты",
+        "Print this catalog as a price list (hidden categories are left out)": "Распечатать каталог как прайс-лист (без скрытых категорий)",
         'rev.': 'ред.',
         "Use the catalog's defaults?": "Использовать настройки каталога?",
         "The items already on the quote are converted, not removed.": "Позиции, уже добавленные в предложение, пересчитываются, а не удаляются.",

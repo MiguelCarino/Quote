@@ -59,6 +59,11 @@ Every item added from a catalog remembers which catalog and revision it came fro
 it under the totals (e.g. *Catálogo: Infraestructura · rev. 2026-10-28*), so a quote can always be traced
 to the price list it was made from. Items typed by hand carry no stamp.
 
+**Price list:** ⎙ *Price list* in the catalog browser, the editor or the Export menu prints the catalog as
+a PDF, grouped by category, with its revision, the VAT note, its disclaimer and a QR to the live catalog
+when it has a public link. **Hidden categories are left out entirely**, so the same catalog can carry
+internal or not-yet-public lines without them reaching paper.
+
 *Add a QR code* (off by default) prints a QR under the totals, in the PDF (clickable) and in the image
 export: a link to the active catalog (a built-in one, or a published one; *My catalog* lives only in
 the browser, so it has to be published first), to the organisation's website, or to any `https://` link,

@@ -234,6 +234,7 @@
                 <div class="cs-menu-div"></div>
                 <button type="button" class="cs-menu-item" role="menuitem" onclick="document.getElementById('config-input').click()"><span>📂</span> <span data-i18n>Load config…</span> <span class="cs-menu-note">.json</span></button>
                 <button type="button" class="cs-menu-item" role="menuitem" onclick="QuoteCatalog.openEditor()"><span>✎</span> <span data-i18n>Edit catalog</span> <span class="cs-menu-note">.json · .csv</span></button>
+                <button type="button" class="cs-menu-item" role="menuitem" onclick="QuoteCatalog.printActive()"><span>⎙</span> <span data-i18n>Price list</span> <span class="cs-menu-note">.pdf</span></button>
                 <div class="cs-menu-div"></div>
                 <button type="button" class="cs-menu-item danger" role="menuitem" onclick="resetAll()"><span data-i18n>Reset All</span></button>
             </div>
@@ -1923,10 +1924,8 @@
             }
         }
 
-        async function buildPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-
+        // Noto Sans JP when it loads (latin + kana + kanji), Helvetica otherwise. Shared by the quote and the price list.
+        async function pdfFont(doc) {
             let fontUsed = "helvetica";
             try {
                 // Noto Sans JP — self-hosted full TTF (latin + kana + kanji) for jsPDF embedding.
@@ -1952,6 +1951,84 @@
                 fontUsed = "helvetica";
                 doc.setFont("helvetica", "normal");
             }
+
+            return fontUsed;
+        }
+
+        // A printable price list of a catalog: grouped by category, hidden categories left out entirely.
+        // cat = { name, revision, items, hidden: [category…], disclaimer, url (link for the QR, or '') }
+        async function exportCatalogPDF(cat) {
+            const items = (cat.items || []).filter(i => !(cat.hidden || []).includes(i.category));
+            if (!items.length) { catToast(t('Nothing to print: every category is hidden'), 'err'); return; }
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const fontUsed = await pdfFont(doc);
+            doc.setFont(fontUsed);
+
+            // Header: organisation, logo, title, revision and date.
+            doc.setFontSize(16); doc.text(appState.config.orgName, 14, 20);
+            if (appState.config.logoData) { try { doc.addImage(appState.config.logoData, 'PNG', 168, 12, 26, 26 * (appState.config.logoAspect || 1)); } catch (e) {} }
+            doc.setFontSize(12); doc.text(`${t('Price list')} — ${cat.name}`, 14, 29);
+            doc.setFontSize(9); doc.setTextColor(90);
+            const meta = [cat.revision ? `${t('rev.')} ${cat.revision}` : '', `${t('Date')}: ${new Date().toLocaleDateString()}`].filter(Boolean).join(' · ');
+            doc.text(meta, 14, 35);
+            let hy = 35;
+            const fis = fiscalCard();
+            if (fis) {
+                doc.setFontSize(8);
+                doc.splitTextToSize((fis.label || fis.country || '') + ' — ' + fis.lines.join('  ·  '), 150).forEach(ln => { hy += 4.5; doc.text(ln, 14, hy); });
+            }
+            doc.setTextColor(0);
+
+            // Body: one header row per category, then its items.
+            const fmt = i => i.price == null ? t('Price after assessment')
+                : i.price === 0 ? t('No charge')
+                : `${(+i.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${i.currency}${i.vatStripped ? ' · ' + t('incl. VAT') : ''}`;
+            const order = [...new Set(items.map(i => i.category))].sort((x, y) => x.localeCompare(y));
+            const body = [];
+            order.forEach(c => {
+                body.push([{ content: c, colSpan: 3, styles: { fillColor: [245, 245, 245], textColor: [161, 98, 7], fontSize: 10 } }]);
+                items.filter(i => i.category === c).forEach(i => body.push([
+                    i.note ? `${i.description}\n${i.note}` : i.description, i.provider || '', fmt(i)]));
+            });
+            doc.autoTable({
+                head: [[t('Description'), t('Provider'), t('Price')]],
+                body, startY: hy + 7,
+                styles: { font: fontUsed, fontSize: 9, overflow: 'linebreak', cellPadding: 2.2 },
+                headStyles: { fillColor: [234, 179, 8], textColor: [5, 5, 5] },
+                columnStyles: { 0: { cellWidth: 112 }, 1: { cellWidth: 30, textColor: [90, 90, 90] }, 2: { halign: 'right' } },
+                didDrawPage: d => {
+                    doc.setFontSize(7); doc.setTextColor(140);
+                    doc.text(`${cat.name}${cat.revision ? ' · ' + t('rev.') + ' ' + cat.revision : ''} · ${doc.internal.getNumberOfPages()}`, 196, 290, { align: 'right' });
+                    doc.setTextColor(0);
+                },
+            });
+
+            // Foot: the VAT note, the disclaimer, and a QR to the live catalog when it has a public link.
+            const notes = [t('Prices are before VAT unless stated otherwise.'), cat.disclaimer].filter(Boolean);
+            let y = doc.lastAutoTable.finalY + 8;
+            if (cat.url && y + 34 > 285) { doc.addPage(); y = 16; }
+            if (cat.url) {
+                doc.addImage(qrPng(cat.url, 300), 'PNG', 168, y - 2, 28, 28);
+                doc.link(168, y - 2, 28, 28, { url: cat.url });
+                doc.setFontSize(7); doc.setTextColor(90);
+                doc.text(t('Catalog and prices'), 182, y + 30, { align: 'center' });
+            }
+            doc.setFontSize(8); doc.setTextColor(90);
+            notes.forEach(n => doc.splitTextToSize(n, cat.url ? 148 : 182).forEach(ln => {
+                if (y > 285) { doc.addPage(); y = 16; }
+                doc.text(ln, 14, y); y += 4;
+            }));
+            doc.setTextColor(0);
+            const slug = String(cat.name || 'catalog').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w-]+/g, '-').replace(/^-|-$/g, '').toLowerCase();
+            doc.save(`${slug || 'catalog'}${cat.revision ? '-r' + String(cat.revision).replace(/[^\w.-]/g, '') : ''}.pdf`);
+        }
+
+        async function buildPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            const fontUsed = await pdfFont(doc);
 
             const targetCurr = appState.config.targetCurrency;
             const vatPct = appState.config.vatRate;

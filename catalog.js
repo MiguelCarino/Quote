@@ -212,6 +212,12 @@
     saveState();
     fetchRates().then(renderTable);
   }
+  // The active catalog as a price list, without its hidden categories.
+  function printActive() {
+    const key = appState.activeCatalog || 'general', s = sources()[key] || sources().general, st = stamp();
+    return exportCatalogPDF({ name: s.label, revision: st.rev || st.date, items: s.items, hidden: hiddenList(key),
+      disclaimer: s.disclaimer || '', url: shareUrl() || '' });
+  }
   // Which catalog an item came from, stamped on the item when it is added, and printed on the quote.
   function stamp() {
     const key = appState.activeCatalog || 'general', s = sources()[key] || sources().general;
@@ -349,12 +355,14 @@
     const all = sources(), cur = appState.activeCatalog || 'general';
     box.innerHTML = Object.entries(all).map(([k, s]) =>
       `<button type="button" data-cat-src="${k}" class="${k === cur ? 'active' : ''}" title="${esc(s.remote ? T('Published by your organisation') : s.builtin ? T('Built in') : T('Saved in this browser'))}">${s.remote ? '⇅ ' : ''}${esc(s.label)}</button>`).join('') +
-      `<button type="button" class="cat-edit" data-cat-edit>✎ ${esc(T('Edit catalog'))}</button>`;
+      `<button type="button" class="cat-edit" data-cat-edit>✎ ${esc(T('Edit catalog'))}</button>` +
+      `<button type="button" class="cat-edit" data-cat-print title="${esc(T('Print this catalog as a price list (hidden categories are left out)'))}">⎙ ${esc(T('Price list'))}</button>`;
   }
   document.addEventListener('click', e => {
     const s = e.target.closest('[data-cat-src]');
     if (s) { activate(s.dataset.catSrc, false, true); catState.cat = '__all'; renderCatalog(); return; }
     if (e.target.closest('[data-cat-edit]')) { openEditor(); return; }
+    if (e.target.closest('[data-cat-print]')) { printActive(); return; }
     const h = e.target.closest('[data-cat-hide]');
     if (h) { e.stopPropagation(); toggleHidden(h.dataset.catHide); return; }
     if (e.target.closest('[data-cat-showhidden]')) {
@@ -400,7 +408,8 @@
           <div class="ced-row"><button type="button" class="btn" data-ced="paste">${esc(T('Import pasted text'))}</button></div></section>
         <section><h3>${esc(T('Export'))}</h3>
           <div class="ced-row"><button type="button" class="btn" data-ced="json">⇩ JSON</button><button type="button" class="btn" data-ced="csv">⇩ CSV</button>
-            <button type="button" class="btn btn-ghost" data-ced="tpl">⇩ ${esc(T('CSV template'))}</button></div>
+            <button type="button" class="btn btn-ghost" data-ced="tpl">⇩ ${esc(T('CSV template'))}</button>
+            <button type="button" class="btn" data-ced="print">⎙ ${esc(T('Price list'))} (PDF)</button></div>
           <p>${esc(T('Edit the CSV in Excel or Google Sheets, then import it back here.'))}</p></section>
         <section><h3>${esc(T('Publish for your team'))}</h3>
           <p>${esc(T('Host the exported JSON at an https address that allows cross-origin reads (GitHub Pages, S3, R2, any web server). Quote reads it, checks it for changes every time it opens and every 5 minutes, and keeps the last good copy if the host is down. Nothing passes through Carino.'))}</p>
@@ -557,6 +566,13 @@
     if (act === 'json') { const c = cleanDraft(); return download(fileName(c, 'json'), toJSON(c), 'application/json'); }
     if (act === 'csv') { const c = cleanDraft(); return download(fileName(c, 'csv'), toCSV(c.items), 'text/csv;charset=utf-8'); }
     if (act === 'tpl') return download('quote-catalog-template.csv', toCSV([{ category: 'Servicios', description: 'Ejemplo: instalación', provider: '', price: 1500, currency: 'MXN', vatStripped: false, note: '', link: '' }]), 'text/csv;charset=utf-8');
+    if (act === 'print') {
+      const c = cleanDraft();
+      // The QR points at the live catalog only when the draft is that catalog, unchanged.
+      const pristine = !draftDirty && draftOrigin !== 'mine' && sources()[draftOrigin].builtin;
+      return exportCatalogPDF({ name: pristine ? sources()[draftOrigin].label : c.name, revision: c.revision || (draftOrigin !== 'mine' && sources()[draftOrigin].builtin ? BUILTIN_REV : ''),
+        items: c.items, hidden: draft.hiddenCategories || [], disclaimer: c.disclaimer, url: !draftDirty && draftOrigin !== 'mine' ? shareUrl() : '' });
+    }
     if (act === 'connect') { const u = document.getElementById('ced-url').value; if (await connect(u)) { catToast('✓ ' + T('Connected')); closeEditor(); openCatalog(); } return; }
     if (act === 'syncnow') return sync(true);
     if (act === 'disconnect') { if (await ask(T('Disconnect the published catalog?'), esc(T('Quote stops checking it. Items already on your quote stay.')), T('Disconnect'))) disconnect(); return; }
@@ -626,5 +642,5 @@
   // A dropped .csv: open the editor on the current catalog and import into it, for review before saving.
   function importInEditor(text, name) { openEditor(); importText(text, name); }
 
-  window.QuoteCatalog = { stamp, revisionLine, shareUrl, boot, adopt, importInEditor, afterBoot, renderSwitch, isHidden, hiddenList, activeLabel, openEditor, safeLink, parseAny, toCSV, toJSON };
+  window.QuoteCatalog = { printActive, stamp, revisionLine, shareUrl, boot, adopt, importInEditor, afterBoot, renderSwitch, isHidden, hiddenList, activeLabel, openEditor, safeLink, parseAny, toCSV, toJSON };
 })();
