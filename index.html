@@ -34,6 +34,24 @@
     <script src="vendor/html2canvas.min.js"></script>
     <script src="vendor/qrcode-generator-1.4.4.min.js"></script>
     <script src="carino-fx.js"></script>
+    <!-- Theme before first paint, so neither theme flashes the other:
+         ?theme=gold|color (review links; not stored) > carino-theme cookie
+         (shared across *.carino.systems) > localStorage > Gold & Black. -->
+    <meta name="theme-color" content="#050505" id="carinoThemeColor">
+    <script>
+    (function () {
+      var d = document.documentElement, t = null;
+      function pick(v) { return v === 'gold' ? 'gold' : (v === 'color' || v === 'colour') ? 'color' : null; }
+      try { t = pick(new URLSearchParams(location.search).get('theme')); } catch (e) {}
+      if (!t) { try { var m = document.cookie.match(/(?:^|;\s*)carino-theme=([^;]*)/); if (m) t = pick(decodeURIComponent(m[1])); } catch (e) {} }
+      if (!t) { try { t = pick(localStorage.getItem('carino-theme')); } catch (e) {} }
+      t = t || 'gold';
+      d.setAttribute('data-carino-theme', t);
+      var dark = d.getAttribute('data-theme') !== 'light' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches;
+      var meta = document.getElementById('carinoThemeColor');
+      if (meta) meta.content = t === 'gold' ? '#050505' : (dark ? '#0e1420' : '#eef3fc');
+    })();
+    </script>
 <link rel="stylesheet" href="fonts/carino-fonts.css">
     <link rel="stylesheet" href="carino-ui.css">
 
@@ -145,7 +163,7 @@
         .cat-switch { display: flex; flex-wrap: wrap; gap: 4px; }
         .cat-switch button { font: inherit; font-size: .8rem; padding: 4px 10px; border-radius: 999px; cursor: pointer;
             background: transparent; color: inherit; border: 1px solid rgba(255,255,255,.18); }
-        .cat-switch button.active { border-color: var(--q-primary, #eab308); color: var(--q-primary, #eab308); }
+        .cat-switch button.active { border-color: var(--q-primary, var(--accent)); color: var(--q-primary, var(--accent)); }
         .cat-rail button { position: relative; }
         .cat-rail button.is-hidden { opacity: .55; }
         .cat-eye { position: absolute; right: 30px; top: 50%; transform: translateY(-50%); font-size: .6rem; color: var(--text-sec); padding: 2px 4px; border-radius: 4px; opacity: 0; }
@@ -369,6 +387,31 @@
         @media (hover: none) {
             .cat-eye { opacity: 1; position: static; transform: none; min-width: 32px; min-height: 32px; display: inline-flex; align-items: center; justify-content: center; margin-left: 4px; }
         }
+
+        /* the hero mark in both colourings; the theme picks one */
+        .short-hero .mark.mk-color, :root[data-carino-theme="color"] .short-hero .mark.mk-gold { display: none; }
+        :root[data-carino-theme="color"] .short-hero .mark.mk-color { display: block; }
+    </style>
+    <!-- Colourful theme + the switch; nothing applies until data-carino-theme="color". -->
+    <link rel="stylesheet" href="carino-theme.css">
+    <style>
+        /* Colourful: carino-theme.css remaps the tokens, so everything that reads
+           one follows; these are the values above that were written for black.
+           The .paper quotation keeps its own white print palette in both themes. */
+        :root[data-carino-theme="color"] .edit-indicator { background: var(--accent-faint); border-color: var(--accent-dim); }
+        :root[data-carino-theme="color"] .btn-danger { border-color: color-mix(in srgb, var(--err) 50%, transparent); }
+        :root[data-carino-theme="color"] .btn-danger:hover { background: color-mix(in srgb, var(--err) 8%, transparent); }
+        :root[data-carino-theme="color"] .paper { box-shadow: var(--ct-shadow-2); }
+        :root[data-carino-theme="color"] .cat-modal-backdrop { background: var(--ct-scrim); }
+        :root[data-carino-theme="color"] .cat-modal { box-shadow: var(--ct-shadow-3); }
+        :root[data-carino-theme="color"] .cat-rail button.active,
+        :root[data-carino-theme="color"] .pc-add:hover { color: var(--ct-on-accent); }
+        :root[data-carino-theme="color"] .cat-switch button { border-color: var(--border); }
+        @media (max-width: 640px), (max-height: 500px) {
+            :root[data-carino-theme="color"] #cat-toast.ok   { background: color-mix(in srgb, var(--ok) 14%, var(--bg-card)); }
+            :root[data-carino-theme="color"] #cat-toast.err  { background: color-mix(in srgb, var(--err) 14%, var(--bg-card)); }
+            :root[data-carino-theme="color"] #cat-toast.warn { background: color-mix(in srgb, var(--warn) 14%, var(--bg-card)); }
+        }
     </style>
 </head>
 <body>
@@ -520,7 +563,8 @@
 
         <main class="ws-pane preview-area">
             <div class="short-hero" id="quoteHero" hidden>
-                <img class="mark" src="logo.svg" alt="" width="48" height="48">
+                <img class="mark mk-gold" src="logo.svg" alt="" width="48" height="48">
+                <img class="mark mk-color" src="logo-color.svg" alt="" width="48" height="48">
                 <h1><span data-i18n>A clean quote</span><br><span class="gold" data-i18n>in a minute.</span></h1>
                 <p class="sh-lede" data-i18n>Pick items from the catalog or type your own, then export a PDF, a spreadsheet or an image.</p>
                 <div class="sh-input">
@@ -1399,8 +1443,14 @@
         function setupUI() {
             // Colors
             // A loaded config's theme: the document accent and the preview background.
-            document.documentElement.style.setProperty('--q-primary', appState.theme.primary);
-            document.documentElement.style.setProperty('--q-page-bg', appState.theme.background);
+            // The fleet defaults are left to the theme (Gold & Black or Colourful),
+            // so only a config's own colours are pinned.
+            const qVar = (name, v, dflt) => {
+                if (!v || String(v).toLowerCase() === dflt) document.documentElement.style.removeProperty(name);
+                else document.documentElement.style.setProperty(name, v);
+            };
+            qVar('--q-primary', appState.theme.primary, '#eab308');
+            qVar('--q-page-bg', appState.theme.background, '#050505');
 
             // Branding: the top bar is the shared Carino navbar; only the
             // printable document carries the org name + logo.
@@ -2351,6 +2401,7 @@
   <script src="catalog.js"></script>
   <script src="carino-bridge.js" defer></script>
 <script src="carino-navbar.js" data-app="Quote" data-repo="Quote" defer></script>
+<script src="carino-theme.js" data-mark="logo.svg" data-mark-color="logo-color.svg" defer></script>
   <script src="carino-lang.js" defer></script>
   <script src="i18n.js" defer></script>
   <script src="carino-ui.js" defer></script>
