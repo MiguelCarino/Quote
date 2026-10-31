@@ -426,6 +426,8 @@
                 <button type="button" class="cs-menu-item q-out" role="menuitem" onclick="exportImage()"><span>🖼️</span> <span data-i18n>Image</span> <span class="cs-menu-note">.png</span></button>
                 <button type="button" class="cs-menu-item q-out" role="menuitem" onclick="sendEmail()"><span>📧</span> <span data-i18n>Email</span></button>
                 <div class="cs-menu-div"></div>
+                <button type="button" class="cs-menu-item q-out" role="menuitem" onclick="openInFiles()"><span>↗</span> <span data-i18n>Open in Files</span> <span class="cs-menu-note">PDF</span></button>
+                <div class="cs-menu-div"></div>
                 <button type="button" class="cs-menu-item" role="menuitem" onclick="document.getElementById('config-input').click()"><span>📂</span> <span data-i18n>Load config…</span> <span class="cs-menu-note">.json</span></button>
                 <button type="button" class="cs-menu-item" role="menuitem" onclick="QuoteCatalog.openEditor()"><span>✎</span> <span data-i18n>Edit catalog</span> <span class="cs-menu-note">.json · .csv</span></button>
                 <button type="button" class="cs-menu-item" role="menuitem" onclick="QuoteCatalog.printActive()"><span>⎙</span> <span data-i18n>Price list</span> <span class="cs-menu-note">.pdf</span></button>
@@ -2132,7 +2134,7 @@
         }
 
         async function exportPDF() {
-            try { await buildPDF(); }
+            try { (await buildPDF()).save('quote.pdf'); }
             catch (e) {
                 // An onclick on an async function swallows every rejection, and a
                 // silently dead export button is worse than an ugly one.
@@ -2326,7 +2328,22 @@
                 }));
             }
             doc.setTextColor(0);
-            doc.save('quote.pdf');
+            return doc;
+        }
+
+        // Hand the same PDF the Export › PDF item saves to files.carino.systems.
+        // The PDF is built inside the bridge's provider, after Files says it is
+        // ready: the tab opens straight from the click, so no pop-up blocker.
+        const FILES_URL = 'https://files.carino.systems/';
+        function openInFiles() {
+            if (!window.CarinoBridge) { window.open(FILES_URL, '_blank', 'noopener'); return; }
+            window.CarinoBridge.send(FILES_URL + '#carino-bridge', async () => {
+                const doc = await buildPDF();
+                return [new File([doc.output('blob')], 'quote.pdf', { type: 'application/pdf' })];
+            }, { timeout: 30000 }).catch(e => {
+                console.error(e);
+                catToast(t('Could not open Files'), 'err');
+            });
         }
 
         function sendEmail() {
