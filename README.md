@@ -72,6 +72,11 @@ with an optional caption.
 *Add a disclaimer* (off by default) prints your own terms under the quote, in the PDF, the
 spreadsheet and the e-mail, with one-click lines for validity, VAT, deposit and exchange rate.
 
+**PDF preview:** every PDF (Export › PDF, Open in Files, the price list) opens in a preview first:
+the pages of the very PDF about to be written, drawn from the PDF itself (`pdf-preview.js`, no PDF
+viewer needed, so it works on phones too). Only the preview's own button saves or sends it; Close
+discards it. `node --test tests/*.test.js` checks the preview reads back what the PDF holds.
+
 ## Licensing
 
 **Mine — GNU Affero General Public License v3.0 or later.** Everything in this

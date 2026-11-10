@@ -213,6 +213,15 @@ const I18N = {
         'Invalid JSON file': 'Archivo JSON no válido',
         'Here is the quotation summary:': 'Aquí está el resumen de la cotización:',
         'Live exchange rates unavailable — converted amounts may be inaccurate.': 'Tipos de cambio no disponibles: los importes convertidos pueden ser inexactos.',
+        // PDF preview (Nov 2026)
+        "PDF preview": "Vista previa del PDF",
+        "Drawn from the PDF itself, page by page, before anything is saved.": "Dibujada a partir del propio PDF, página por página, antes de guardar nada.",
+        "Preparing the PDF…": "Preparando el PDF…",
+        "1 page": "1 página",
+        "{n} pages": "{n} páginas",
+        "Page {n}": "Página {n}",
+        "Download PDF": "Descargar PDF",
+        "Print": "Imprimir",
     },
     'pt-BR': {
         "Price list": "Lista de preços",
@@ -414,6 +423,15 @@ const I18N = {
         'Invalid JSON file': 'Arquivo JSON inválido',
         'Here is the quotation summary:': 'Segue o resumo do orçamento:',
         'Live exchange rates unavailable — converted amounts may be inaccurate.': 'Câmbio ao vivo indisponível: os valores convertidos podem estar imprecisos.',
+        // PDF preview (Nov 2026)
+        "PDF preview": "Pré-visualização do PDF",
+        "Drawn from the PDF itself, page by page, before anything is saved.": "Desenhada a partir do próprio PDF, página por página, antes de salvar qualquer coisa.",
+        "Preparing the PDF…": "Preparando o PDF…",
+        "1 page": "1 página",
+        "{n} pages": "{n} páginas",
+        "Page {n}": "Página {n}",
+        "Download PDF": "Baixar PDF",
+        "Print": "Imprimir",
     },
     ja: {
         "Price list": "価格表",
@@ -615,6 +633,15 @@ const I18N = {
         'Invalid JSON file': '無効なJSONファイルです',
         'Here is the quotation summary:': '見積もりの概要です:',
         'Live exchange rates unavailable — converted amounts may be inaccurate.': '為替レートを取得できません — 換算額が不正確な場合があります。',
+        // PDF preview (Nov 2026)
+        "PDF preview": "PDFプレビュー",
+        "Drawn from the PDF itself, page by page, before anything is saved.": "保存する前に、PDFそのものからページごとに描画しています。",
+        "Preparing the PDF…": "PDFを準備しています…",
+        "1 page": "1ページ",
+        "{n} pages": "{n}ページ",
+        "Page {n}": "{n}ページ目",
+        "Download PDF": "PDFをダウンロード",
+        "Print": "印刷",
     },
     ru: {
         "Price list": "Прайс-лист",
@@ -816,6 +843,15 @@ const I18N = {
         'Invalid JSON file': 'Недопустимый файл JSON',
         'Here is the quotation summary:': 'Краткое содержание сметы:',
         'Live exchange rates unavailable — converted amounts may be inaccurate.': 'Актуальные курсы валют недоступны — пересчитанные суммы могут быть неточными.',
+        // PDF preview (Nov 2026)
+        "PDF preview": "Предпросмотр PDF",
+        "Drawn from the PDF itself, page by page, before anything is saved.": "Отрисовано по самому PDF, страница за страницей, до сохранения.",
+        "Preparing the PDF…": "Готовим PDF…",
+        "1 page": "1 страница",
+        "{n} pages": "Страниц: {n}",
+        "Page {n}": "Страница {n}",
+        "Download PDF": "Скачать PDF",
+        "Print": "Печать",
     },
 };
 

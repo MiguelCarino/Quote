@@ -34,6 +34,7 @@
     <script src="vendor/jspdf.plugin.autotable.min.js"></script>
     <script src="vendor/html2canvas.min.js"></script>
     <script src="vendor/qrcode-generator-1.4.4.min.js"></script>
+    <script src="pdf-preview.js"></script>
     <script src="carino-fx.js"></script>
     <!-- Theme before first paint, so neither theme flashes the other:
          ?theme=gold|color (review links; not stored) > carino-theme cookie
@@ -173,6 +174,22 @@
         .cat-showhidden { margin-top: 10px; font-size: .72rem !important; color: var(--text-sec) !important; border: 1px dashed var(--border) !important; }
         .cat-switch .cat-edit { border-style: dashed; }
         .ced { height: 88vh; height: 88dvh; max-width: 1200px; }
+
+        /* --- PDF preview (pdf-preview.js): the PDF's own pages before anything is saved or sent ---
+           The shared .rpv-scrim (under the pinned navbar, below its z-index) sits above the catalog
+           modals (1002), the full-screen editor included, which also starts under the navbar. */
+        .qp-note { margin: 0; font-size: var(--fs-sm); color: var(--text-muted); }
+        .qp-stage { overscroll-behavior: contain; padding: 16px; }
+        .qp-pages { display: flex; flex-direction: column; align-items: center; }
+        .qp-page { display: block; width: 100%; max-width: 794px; height: auto; background: #fff; box-shadow: 0 1px 6px rgba(0,0,0,.28); }
+        .qp-break { position: relative; width: 100%; max-width: 794px; height: 28px; }
+        .qp-break::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: 1.5px dashed #9aa0a8; }
+        .qp-break span { position: absolute; left: 8px; top: calc(50% + 2px); font: 10px var(--mono); color: #4b5563; }
+        @media (max-width: 700px) {
+            .qp-note { order: 2; padding: 0 12px; font-size: var(--fs-label); }
+            .qp-stage { padding: 8px; }
+            .rpv-actions { padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
+        }
         .ced-name { max-width: 260px; } .ced-rev { max-width: 110px; }
         .ced-tabs { display: flex; gap: 4px; padding: 8px 16px 0; border-bottom: 1px solid var(--border); }
         .ced-tabs button { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--text-sec); padding: 8px 12px; cursor: pointer; font: inherit; font-size: .85rem; }
@@ -302,10 +319,9 @@
             .cat-eye { position: static; transform: none; min-width: 32px; min-height: 32px; display: inline-flex; align-items: center; justify-content: center; margin-left: 4px; }
             .cat-showhidden { margin-top: 0; white-space: nowrap; }
 
-            /* The editor takes the whole screen, above the navbar (which would sit
-               on its head and stay tappable) and below ask()'s .modal-scrim. */
-            #ced-modal { top: 0; z-index: 2147483500; }
-            #ced-modal .ced { border: 0; padding-top: env(safe-area-inset-top); padding-bottom: 0; }
+            /* The editor takes the screen under the pinned navbar, like every
+               dialog, so a price-list preview opened from it covers it whole. */
+            #ced-modal .ced { border: 0; padding-bottom: 0; }
             #ced-modal .cat-head { flex-wrap: wrap; gap: 8px 10px; padding: 12px 16px; }
             /* Title and ✕ fill row 1, so name and revision share row 2. */
             #ced-modal .cat-head h2 { flex: 1 1 calc(100% - 64px); }
@@ -372,7 +388,6 @@
         @media (max-height: 500px) {
             .cat-modal-backdrop { top: var(--nav-h); padding: 0 env(safe-area-inset-right) 0 env(safe-area-inset-left); align-items: stretch; }
             .cat-modal { height: auto; max-height: none; border-radius: 0; border-width: 1px 0 0; }
-            #ced-modal { top: 0; z-index: 2147483500; }
             #ced-modal .ced { border: 0; }
             /* Above the editor's one-row footer, not over its Save button. */
             body:has(#ced-modal.open) #cat-toast { bottom: calc(80px + env(safe-area-inset-bottom)); }
@@ -663,6 +678,27 @@
                 <button type="button" class="btn btn-ghost" onclick="closeReset()" data-i18n>Cancel</button>
                 <button type="button" class="btn btn-danger" id="resetRun" data-i18n>Reset All</button>
             </div>
+        </div>
+    </div>
+
+    <!-- PDF preview (pdf-preview.js): the pages of the PDF about to be saved or sent, drawn from
+         the PDF itself. Close drops it; only the primary button writes anything. -->
+    <div class="rpv-scrim qp-overlay" id="qpOverlay" hidden>
+        <div class="rpv qp-box" role="dialog" aria-modal="true" aria-labelledby="qpTitle">
+            <aside class="rpv-side">
+                <div class="rpv-head">
+                    <h2 class="rpv-title" id="qpTitle" data-i18n>PDF preview</h2>
+                    <button type="button" class="modal-x rpv-x" id="qpClose" title="Close" aria-label="Close">✕</button>
+                </div>
+                <p class="rpv-status" id="qpStatus" role="status" aria-live="polite"></p>
+                <p class="qp-note" data-i18n>Drawn from the PDF itself, page by page, before anything is saved.</p>
+                <p class="rpv-name" id="qpName" translate="no"></p>
+                <div class="rpv-actions">
+                    <button type="button" class="btn" id="qpPrint" disabled><span aria-hidden="true">🖨</span> <span data-i18n>Print</span></button>
+                    <button type="button" class="btn btn-primary" id="qpCommit" disabled><span class="qp-ico" aria-hidden="true"></span> <span class="qp-lab" data-i18n>Download PDF</span></button>
+                </div>
+            </aside>
+            <div class="rpv-stage qp-stage" id="qpStage" translate="no" tabindex="0" role="region" aria-labelledby="qpTitle"><div class="qp-pages" id="qpPages"></div></div>
         </div>
     </div>
 
@@ -2154,14 +2190,17 @@
             });
         }
 
-        async function exportPDF() {
-            try { (await buildPDF()).save('quote.pdf'); }
-            catch (e) {
-                // An onclick on an async function swallows every rejection, and a
-                // silently dead export button is worse than an ugly one.
-                console.error(e);
-                alert(t('PDF export failed') + ': ' + e.message);
-            }
+        // Export › PDF: the quote's PDF opens in the preview first; its Download PDF
+        // button saves that very document as quote.pdf. A build failure is shown
+        // in the preview's status line (an onclick on an async function would
+        // otherwise swallow it, and a silently dead button is worse than an ugly one).
+        function exportPDF() {
+            return QuotePdfPreview.open({ build: async () => ({ doc: await buildPDF(), name: 'quote.pdf' }) });
+        }
+
+        // Every PDF starts here: the preview needs to know where each image came from.
+        function newPdfDoc() {
+            return QuotePdfPreview.track(new window.jspdf.jsPDF());
         }
 
         // Noto Sans JP when it loads (latin + kana + kanji), Helvetica otherwise. Shared by the quote and the price list.
@@ -2197,11 +2236,17 @@
 
         // A printable price list of a catalog: grouped by category, hidden categories left out entirely.
         // cat = { name, revision, items, hidden: [category…], disclaimer, url (link for the QR, or '') }
-        async function exportCatalogPDF(cat) {
+        // Opens the price list in the PDF preview; its Download PDF button saves it.
+        function exportCatalogPDF(cat) {
             const items = (cat.items || []).filter(i => !(cat.hidden || []).includes(i.category));
             if (!items.length) { catToast(t('Nothing to print: every category is hidden'), 'err'); return; }
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+            return QuotePdfPreview.open({ build: () => buildCatalogPDF(cat) });
+        }
+
+        // The price list as { doc, name }: the document and the file name it is saved under.
+        async function buildCatalogPDF(cat) {
+            const items = (cat.items || []).filter(i => !(cat.hidden || []).includes(i.category));
+            const doc = newPdfDoc();
             const fontUsed = await pdfFont(doc);
             doc.setFont(fontUsed);
 
@@ -2261,12 +2306,11 @@
             }));
             doc.setTextColor(0);
             const slug = String(cat.name || 'catalog').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w-]+/g, '-').replace(/^-|-$/g, '').toLowerCase();
-            doc.save(`${slug || 'catalog'}${cat.revision ? '-r' + String(cat.revision).replace(/[^\w.-]/g, '') : ''}.pdf`);
+            return { doc, name: `${slug || 'catalog'}${cat.revision ? '-r' + String(cat.revision).replace(/[^\w.-]/g, '') : ''}.pdf` };
         }
 
         async function buildPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+            const doc = newPdfDoc();
 
             const fontUsed = await pdfFont(doc);
 
@@ -2352,16 +2396,21 @@
             return doc;
         }
 
-        // Hand the same PDF the Export › PDF item saves to files.carino.systems.
-        // The PDF is built inside the bridge's provider, after Files says it is
-        // ready: the tab opens straight from the click, so no pop-up blocker.
+        // Hand the same PDF the Export › PDF item saves to files.carino.systems,
+        // after the preview: its Open in Files button sends the previewed document.
+        // The tab opens straight from that click, so no pop-up blocker.
         const FILES_URL = 'https://files.carino.systems/';
         function openInFiles() {
+            return QuotePdfPreview.open({
+                build: async () => ({ doc: await buildPDF(), name: 'quote.pdf' }),
+                commit: { label: 'Open in Files', icon: '↗', run: sendToFiles },
+            });
+        }
+        function sendToFiles(built) {
             if (!window.CarinoBridge) { window.open(FILES_URL, '_blank', 'noopener'); return; }
-            window.CarinoBridge.send(FILES_URL + '#carino-bridge', async () => {
-                const doc = await buildPDF();
-                return [new File([doc.output('blob')], 'quote.pdf', { type: 'application/pdf' })];
-            }, { timeout: 30000 }).catch(e => {
+            window.CarinoBridge.send(FILES_URL + '#carino-bridge',
+                () => [new File([built.doc.output('blob')], built.name, { type: 'application/pdf' })],
+                { timeout: 30000 }).catch(e => {
                 console.error(e);
                 catToast(t('Could not open Files'), 'err');
             });
@@ -2423,6 +2472,7 @@
             document.getElementById('notes').placeholder = t('Notes');
             document.getElementById('cat-search').placeholder = t('Search products & services…');
             document.querySelectorAll('.cat-close, .modal-x').forEach(b => b.setAttribute('aria-label', t('Close')));
+            document.querySelectorAll('.rpv-x').forEach(b => b.title = t('Close'));
             document.getElementById('print-logo').alt = t('Logo');
         }
 
