@@ -77,6 +77,12 @@ the pages of the very PDF about to be written, drawn from the PDF itself (`pdf-p
 viewer needed, so it works on phones too). Only the preview's own button saves or sends it; Close
 discards it. `node --test tests/*.test.js` checks the preview reads back what the PDF holds.
 
+**PDF or HTML:** the quote and the price list can also be saved as one standalone HTML file
+(*File: PDF | HTML* in the preview, remembered by the browser). Both files are drawn from the same
+model, so they carry the same header, tax block, table, totals, rates line, disclaimer and QR; the
+HTML (`quote-report.js`) copies the PDF's A4 layout and prints like it, with the logo and QR written
+in, no scripts and no linked files. Open in Files always sends the PDF.
+
 ## Licensing
 
 **Mine — GNU Affero General Public License v3.0 or later.** Everything in this

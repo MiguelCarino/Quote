@@ -10,9 +10,17 @@
 // text objects, images). Anything else is skipped and counted, never guessed at.
 //
 //   QuotePdfPreview.track(doc)        call right after new jsPDF(): remembers each image's source
-//   QuotePdfPreview.open({ build, name?, commit? })
+//   QuotePdfPreview.open({ build, html?, commit? })
 //       build()   -> Promise<{ doc, name }>  builds the document (again on a language change)
+//       html()    -> Promise<{ html, name }> the same report as one standalone HTML file
+//                    (quote-report.js); with it the column shows the File  PDF | HTML switch
+//                    (CarinoPdf.formatSwitch, remembered for the site) just above the file name
 //       commit    { label, icon, run(built) } — the primary button; default: Download PDF (doc.save)
+//                    A commit of its own (Open in Files) hands over the PDF: no switch then.
+//
+// HTML selected: the stage shows the HTML file itself in a frame laid out at sheet width and
+// scaled to fit, Print prints that frame, and the primary button (Download HTML) saves that very
+// file through CarinoPdf.download (byte for byte: the file stands alone). PDF stays jsPDF's.
 //
 // The dialog is the fleet's report preview (.rpv, carino-ui.css 18b): title, ✕, page count, note,
 // file name and the buttons in the left column, Print then the primary button at its foot.
@@ -408,6 +416,63 @@
   const $ = id => document.getElementById(id);
   const _qp = { seq: 0, cfg: null, built: null, back: null };
 
+  // The format shown: 'html' only when the report has an HTML version and the button downloads.
+  let _sw = null;
+  const format = cfg => (cfg && cfg.html && !cfg.commit && _sw ? _sw.get() : 'pdf');
+  const fileName = (name, f) => (root.CarinoPdf ? root.CarinoPdf.fileName(name, f)
+    : String(name || 'report').replace(/\.(pdf|html?)$/i, '') + (f === 'html' ? '.html' : '.pdf'));
+  function relabel(el, key) {
+    if (!el) return;
+    el.dataset.i18nKey = key;
+    el.textContent = T(key);
+  }
+  // Title, note and button follow the format.
+  function paintFormat(cfg) {
+    const f = format(cfg), c = cfg.commit || {};
+    relabel($('qpTitle'), f === 'html' ? 'HTML preview' : 'PDF preview');
+    relabel($('qpNote'), f === 'html' ? 'The HTML file itself, as it will be saved.'
+      : 'Drawn from the PDF itself, page by page, before anything is saved.');
+    setCommitLabel(c.label || (f === 'html' ? 'Download HTML' : 'Download PDF'), c.icon || '⬇');
+    if (_sw) _sw.el.hidden = !(cfg.html && !cfg.commit);
+  }
+
+  // The HTML file in a frame at sheet width (QuoteReport.SHEET_PX), scaled to the stage, never reflowed.
+  const SHEET_PX = (root.QuoteReport && root.QuoteReport.SHEET_PX) || 826;
+  function htmlSheet(html) {
+    const wrap = document.createElement('div');
+    wrap.className = 'qp-html';
+    const fr = document.createElement('iframe');
+    fr.className = 'qp-html-frame';
+    fr.title = T('HTML preview');
+    fr.setAttribute('sandbox', 'allow-same-origin allow-modals');   // no scripts; Print needs modals
+    fr.style.width = SHEET_PX + 'px';
+    fr.style.height = '1123px';
+    wrap.appendChild(fr);
+    return new Promise(res => {
+      fr.addEventListener('load', () => {
+        // Keys pressed inside the frame (after a click in it, or after Print) never reach the
+        // window: hand them to the dialog's handler so Esc still closes and Tab still wraps.
+        try { fr.contentDocument.addEventListener('keydown', e => { if (_qp.cfg) onKey(e); }); } catch (_) {}
+        res(wrap);
+      }, { once: true });
+      fr.srcdoc = html;
+      $('qpPages').replaceChildren(wrap);   // srcdoc loads once the frame is in the page
+    });
+  }
+  function fitHtml() {
+    const wrap = $('qpPages') && $('qpPages').querySelector('.qp-html');
+    if (!wrap) return;
+    const fr = wrap.firstChild;
+    let h = 1123;
+    try { h = Math.max(h, fr.contentDocument.documentElement.scrollHeight); } catch (_) {}
+    const avail = $('qpPages').clientWidth || SHEET_PX;
+    const k = Math.min(1, avail / SHEET_PX);
+    fr.style.height = h + 'px';
+    fr.style.transform = k < 1 ? `scale(${k})` : '';
+    wrap.style.width = Math.floor(SHEET_PX * k) + 'px';
+    wrap.style.height = Math.ceil(h * k) + 'px';
+  }
+
   function setCommitLabel(label, icon) {
     const btn = $('qpCommit');
     if (!btn) return;
@@ -424,7 +489,9 @@
     if (print) print.disabled = true;
     _qp.built = null;
     dropPrintFrame();
-    status.textContent = T('Preparing the PDF…');
+    paintFormat(cfg);
+    if (format(cfg) === 'html') return refreshHtml(seq, cfg);
+    status.textContent = T('Creating the PDF…');
     let built;
     try {
       built = await cfg.build();
@@ -441,7 +508,29 @@
       console.error(e);
       if (seq !== _qp.seq) return;
       pages.replaceChildren();
-      status.textContent = T('PDF export failed') + ': ' + (e && e.message || e);
+      status.textContent = T('Could not create the PDF.') + ' ' + (e && e.message || e);
+    }
+  }
+
+  async function refreshHtml(seq, cfg) {
+    const status = $('qpStatus'), commit = $('qpCommit'), print = $('qpPrint');
+    status.textContent = T('Preparing the HTML…');
+    try {
+      const built = await cfg.html();
+      if (seq !== _qp.seq) return;
+      await htmlSheet(built.html);
+      if (seq !== _qp.seq) return;
+      fitHtml();
+      _qp.built = { html: built.html, name: fileName(built.name, 'html') };
+      $('qpName').textContent = _qp.built.name;
+      status.textContent = T('One HTML file, ready to save.');
+      commit.disabled = false;
+      if (print) print.disabled = false;
+    } catch (e) {
+      console.error(e);
+      if (seq !== _qp.seq) return;
+      $('qpPages').replaceChildren();
+      status.textContent = T('Could not create the HTML file.') + ' ' + (e && e.message || e);
     }
   }
 
@@ -453,8 +542,7 @@
     if (_qp.cfg) close(true);
     _qp.cfg = cfg;
     _qp.back = document.activeElement;
-    const c = cfg.commit || {};
-    setCommitLabel(c.label || 'Download PDF', c.icon || '⬇');
+    paintFormat(cfg);
     $('qpName').textContent = '';
     $('qpPages').replaceChildren();
     $('qpStage').scrollTop = 0;
@@ -496,7 +584,8 @@
     if (e.key === 'Escape') { e.stopImmediatePropagation(); e.preventDefault(); close(); return; }
     if (e.key === 'Tab') {   // keep focus in the dialog
       const box = $('qpOverlay').querySelector('.qp-box');
-      const f = [...box.querySelectorAll('button:not([disabled]), [tabindex]:not([tabindex="-1"])')];
+      const f = [...box.querySelectorAll('button:not([disabled]):not([tabindex="-1"]), [tabindex]:not([tabindex="-1"]):not(button), iframe')]
+        .filter(el => el.getClientRects().length);
       if (!f.length) return;
       const first = f[0], last = f[f.length - 1];
       if (!box.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
@@ -525,7 +614,7 @@
     return _pf.url;
   }
   function preparePrint() {
-    if (!_qp.built || _pf.frame || !inlinePdf()) return;
+    if (!_qp.built || !_qp.built.doc || _pf.frame || !inlinePdf()) return;
     const fr = document.createElement('iframe');
     _pf.frame = fr;
     fr.setAttribute('aria-hidden', 'true');
@@ -545,6 +634,12 @@
   }
   function print() {
     if (!_qp.built) return;
+    if (_qp.built.html !== undefined) {   // HTML: print the very file shown in the frame
+      const fr = $('qpPages').querySelector('.qp-html-frame');
+      try { fr.contentWindow.focus(); fr.contentWindow.print(); } catch (e) { console.warn('HTML preview: print failed', e); }
+      if (_qp.cfg && $('qpPrint')) $('qpPrint').focus();   // back in the dialog once the print dialog shuts
+      return;
+    }
     if (!inlinePdf()) { root.open(printUrl(), '_blank', 'noopener'); return; }
     preparePrint();
     if (_pf.ready) printFrame(); else _pf.pending = true;
@@ -554,9 +649,32 @@
   function commit() {
     const built = _qp.built, cfg = _qp.cfg;
     if (!built || !cfg) return;
+    if (built.html !== undefined) { saveHtml(built); return; }
     close();
     if (cfg.commit && cfg.commit.run) cfg.commit.run(built);
     else built.doc.save(built.name);
+  }
+
+  // The HTML file through the fleet helper (it hands a standalone file back byte for byte);
+  // the preview stays open, busy, until the file is handed to the browser.
+  function saveHtml(built) {
+    const btn = $('qpCommit'), status = $('qpStatus');
+    const done = () => close();
+    if (!root.CarinoPdf) {
+      const url = URL.createObjectURL(new Blob([built.html], { type: 'text/html;charset=utf-8' }));
+      const a = document.createElement('a');
+      a.href = url; a.download = built.name; a.style.display = 'none';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      done();
+      return;
+    }
+    btn.disabled = true;
+    root.CarinoPdf.download({ html: built.html, name: built.name, format: 'html' }).then(r => {
+      if (r && r.ok) { done(); return; }
+      btn.disabled = false;
+      status.textContent = T('Could not create the HTML file.') + (r && r.error ? ' ' + r.error : '');
+    });
   }
 
   if (typeof document !== 'undefined') {
@@ -572,7 +690,17 @@
         ['pointerenter', 'focus'].forEach(ev => pr.addEventListener(ev, preparePrint));
       }
       ov.addEventListener('click', e => { if (e.target === ov) close(); });
-      root.addEventListener('carino:langchange', () => { if (_qp.cfg) setTimeout(refresh, 0); });   // after i18n.js switched t()
+      // File  PDF | HTML, above the file name, outside any scrolling list.
+      if (root.CarinoPdf && root.CarinoPdf.formatSwitch) {
+        root.CarinoPdf.t = T;
+        _sw = root.CarinoPdf.formatSwitch({ onChange: () => { if (_qp.cfg) refresh(); } });
+        _sw.el.hidden = true;
+        $('qpName').before(_sw.el);
+      }
+      root.addEventListener('carino:langchange', () => {   // after i18n.js switched t()
+        setTimeout(() => { if (_sw) _sw.relabel(); if (_qp.cfg) refresh(); }, 0);
+      });
+      root.addEventListener('resize', () => { if (_qp.cfg) fitHtml(); });
     };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire); else wire();
   }

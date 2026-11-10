@@ -35,6 +35,8 @@
     <script src="vendor/html2canvas.min.js"></script>
     <script src="vendor/qrcode-generator-1.4.4.min.js"></script>
     <script src="pdf-preview.js"></script>
+    <script src="quote-report.js"></script>
+    <script src="carino-pdf.js" defer></script>
     <script src="carino-fx.js"></script>
     <!-- Theme before first paint, so neither theme flashes the other:
          ?theme=gold|color (review links; not stored) > carino-theme cookie
@@ -185,6 +187,9 @@
         .qp-break { position: relative; width: 100%; max-width: 794px; height: 28px; }
         .qp-break::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: 1.5px dashed #9aa0a8; }
         .qp-break span { position: absolute; left: 8px; top: calc(50% + 2px); font: 10px var(--mono); color: #4b5563; }
+        /* HTML mode: the HTML file itself in a frame laid out at sheet width and scaled down to fit (never reflowed). */
+        .qp-html { position: relative; flex: none; overflow: hidden; }
+        .qp-html-frame { position: absolute; top: 0; left: 0; border: 0; background: #d6d8dc; transform-origin: 0 0; }
         @media (max-width: 700px) {
             .qp-note { order: 2; padding: 0 12px; font-size: var(--fs-label); }
             .qp-stage { padding: 8px; }
@@ -691,7 +696,7 @@
                     <button type="button" class="modal-x rpv-x" id="qpClose" title="Close" aria-label="Close">✕</button>
                 </div>
                 <p class="rpv-status" id="qpStatus" role="status" aria-live="polite"></p>
-                <p class="qp-note" data-i18n>Drawn from the PDF itself, page by page, before anything is saved.</p>
+                <p class="qp-note" id="qpNote" data-i18n>Drawn from the PDF itself, page by page, before anything is saved.</p>
                 <p class="rpv-name" id="qpName" translate="no"></p>
                 <div class="rpv-actions">
                     <button type="button" class="btn" id="qpPrint" disabled><span aria-hidden="true">🖨</span> <span data-i18n>Print</span></button>
@@ -2195,7 +2200,55 @@
         // in the preview's status line (an onclick on an async function would
         // otherwise swallow it, and a silently dead button is worse than an ugly one).
         function exportPDF() {
-            return QuotePdfPreview.open({ build: async () => ({ doc: await buildPDF(), name: 'quote.pdf' }) });
+            return QuotePdfPreview.open({
+                build: async () => ({ doc: await buildPDF(), name: 'quote.pdf' }),
+                html: async () => ({ html: QuoteReport.quoteHtml(quoteData()), name: 'quote.html' }),
+            });
+        }
+
+        // The quote as a plain model, every string formatted and translated: the PDF
+        // (buildPDF) and the HTML file (QuoteReport.quoteHtml) are both drawn from it.
+        function quoteData() {
+            const targetCurr = appState.config.targetCurrency;
+            const vatPct = appState.config.vatRate;
+            const meta = appState.meta || {};
+            const lines = [`${t('Date')}: ${new Date().toLocaleDateString()}`];
+            if (meta.quoteNo)    lines.push(`${t('Quote #')}: ${meta.quoteNo}`);
+            if (meta.validUntil) lines.push(`${t('Valid Until')}: ${meta.validUntil}`);
+            if (meta.client)     lines.push(`${t('Bill To')}: ${meta.client}`);
+            const fis = fiscalCard();
+            const fisHead = fis ? (fis.label || fis.country || '') : '';
+            let subtotal = 0;
+            const rows = appState.items.map(i => {
+                const qty = i.qty || 1;
+                const rate = getRate(i.currency, targetCurr);
+                const netUnitSrc = i.stripVat ? i.price / (1 + (vatPct/100)) : i.price;
+                const netUnit = netUnitSrc * rate;
+                const lineNet = netUnit * qty;
+                subtotal += lineNet;
+                return [qty, i.desc, i.provider || '', QuoteCatalog.safeLink(i.link), `${netUnit.toFixed(2)} ${targetCurr}`, `${lineNet.toFixed(2)} ${targetCurr}`];
+            });
+            const vatAmount = subtotal * (vatPct/100);
+            const total = subtotal + vatAmount;
+            const qr = qrTarget();
+            return {
+                lang: document.documentElement.lang || 'en',
+                title: `${appState.config.orgName} - ${t('Quote')}`,
+                org: appState.config.orgName,
+                logo: appState.config.logoData ? { src: appState.config.logoData, aspect: appState.config.logoAspect || 1 } : null,
+                logoAlt: t('Logo'),
+                lines,
+                fiscal: fis ? (fisHead ? fisHead + ' — ' : '') + fis.lines.join('  ·  ') : '',
+                head: [t('Qty'), t('Description'), t('Provider'), t('Link'), t('Unit (net)'), t('Amount (net)')],
+                rows,
+                foot: [
+                    { label: t('Subtotal'), value: `${subtotal.toFixed(2)} ${targetCurr}` },
+                    { label: `${t('VAT')} (${vatPct}%)`, value: `${vatAmount.toFixed(2)} ${targetCurr}` },
+                    { label: t('TOTAL (Inc. VAT)'), value: `${total.toFixed(2)} ${targetCurr}`, bold: true },
+                ],
+                notes: [fxLine(), QuoteCatalog.revisionLine(appState.items), disclaimerText()].filter(Boolean),
+                qr: qr ? { url: qr.url, caption: qr.caption, src: qrPng(qr.url, 300) } : null,
+            };
         }
 
         // Every PDF starts here: the preview needs to know where each image came from.
@@ -2240,131 +2293,136 @@
         function exportCatalogPDF(cat) {
             const items = (cat.items || []).filter(i => !(cat.hidden || []).includes(i.category));
             if (!items.length) { catToast(t('Nothing to print: every category is hidden'), 'err'); return; }
-            return QuotePdfPreview.open({ build: () => buildCatalogPDF(cat) });
+            return QuotePdfPreview.open({
+                build: () => buildCatalogPDF(cat),
+                html: async () => ({ html: QuoteReport.priceListHtml(catalogData(cat)), name: catalogFileName(cat) + '.html' }),
+            });
+        }
+
+        function catalogFileName(cat) {
+            const slug = String(cat.name || 'catalog').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w-]+/g, '-').replace(/^-|-$/g, '').toLowerCase();
+            return `${slug || 'catalog'}${cat.revision ? '-r' + String(cat.revision).replace(/[^\w.-]/g, '') : ''}`;
+        }
+
+        // The price list as a plain model, every string formatted and translated: the PDF
+        // (buildCatalogPDF) and the HTML file (QuoteReport.priceListHtml) are both drawn from it.
+        // Hidden categories are left out here, so neither file can carry them.
+        function catalogData(cat) {
+            const items = (cat.items || []).filter(i => !(cat.hidden || []).includes(i.category));
+            const fis = fiscalCard();
+            const fmt = i => i.price == null ? t('Price after assessment')
+                : i.price === 0 ? t('No charge')
+                : `${(+i.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${i.currency}${i.vatStripped ? ' · ' + t('incl. VAT') : ''}`;
+            const order = [...new Set(items.map(i => i.category))].sort((x, y) => x.localeCompare(y));
+            return {
+                lang: document.documentElement.lang || 'en',
+                title: `${t('Price list')} — ${cat.name}`,
+                org: appState.config.orgName,
+                logo: appState.config.logoData ? { src: appState.config.logoData, aspect: appState.config.logoAspect || 1 } : null,
+                logoAlt: t('Logo'),
+                heading: `${t('Price list')} — ${cat.name}`,
+                meta: [cat.revision ? `${t('rev.')} ${cat.revision}` : '', `${t('Date')}: ${new Date().toLocaleDateString()}`].filter(Boolean).join(' · '),
+                fiscal: fis ? (fis.label || fis.country || '') + ' — ' + fis.lines.join('  ·  ') : '',
+                head: [t('Description'), t('Provider'), t('Price')],
+                groups: order.map(c => ({ name: c, items: items.filter(i => i.category === c)
+                    .map(i => ({ description: i.description, note: i.note || '', provider: i.provider || '', price: fmt(i) })) })),
+                notes: [t('Prices are before VAT unless stated otherwise.'), cat.disclaimer].filter(Boolean),
+                qr: cat.url ? { url: cat.url, caption: t('Catalog and prices'), src: qrPng(cat.url, 300) } : null,
+                pageFoot: `${cat.name}${cat.revision ? ' · ' + t('rev.') + ' ' + cat.revision : ''}`,
+            };
         }
 
         // The price list as { doc, name }: the document and the file name it is saved under.
         async function buildCatalogPDF(cat) {
-            const items = (cat.items || []).filter(i => !(cat.hidden || []).includes(i.category));
+            const m = catalogData(cat);
             const doc = newPdfDoc();
             const fontUsed = await pdfFont(doc);
             doc.setFont(fontUsed);
 
             // Header: organisation, logo, title, revision and date.
-            doc.setFontSize(16); doc.text(appState.config.orgName, 14, 20);
-            if (appState.config.logoData) { try { doc.addImage(appState.config.logoData, 'PNG', 168, 12, 26, 26 * (appState.config.logoAspect || 1)); } catch (e) {} }
-            doc.setFontSize(12); doc.text(`${t('Price list')} — ${cat.name}`, 14, 29);
+            doc.setFontSize(16); doc.text(m.org, 14, 20);
+            if (m.logo) { try { doc.addImage(m.logo.src, 'PNG', 168, 12, 26, 26 * m.logo.aspect); } catch (e) {} }
+            doc.setFontSize(12); doc.text(m.heading, 14, 29);
             doc.setFontSize(9); doc.setTextColor(90);
-            const meta = [cat.revision ? `${t('rev.')} ${cat.revision}` : '', `${t('Date')}: ${new Date().toLocaleDateString()}`].filter(Boolean).join(' · ');
-            doc.text(meta, 14, 35);
+            doc.text(m.meta, 14, 35);
             let hy = 35;
-            const fis = fiscalCard();
-            if (fis) {
+            if (m.fiscal) {
                 doc.setFontSize(8);
-                doc.splitTextToSize((fis.label || fis.country || '') + ' — ' + fis.lines.join('  ·  '), 150).forEach(ln => { hy += 4.5; doc.text(ln, 14, hy); });
+                doc.splitTextToSize(m.fiscal, 150).forEach(ln => { hy += 4.5; doc.text(ln, 14, hy); });
             }
             doc.setTextColor(0);
 
             // Body: one header row per category, then its items.
-            const fmt = i => i.price == null ? t('Price after assessment')
-                : i.price === 0 ? t('No charge')
-                : `${(+i.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${i.currency}${i.vatStripped ? ' · ' + t('incl. VAT') : ''}`;
-            const order = [...new Set(items.map(i => i.category))].sort((x, y) => x.localeCompare(y));
             const body = [];
-            order.forEach(c => {
-                body.push([{ content: c, colSpan: 3, styles: { fillColor: [245, 245, 245], textColor: [161, 98, 7], fontSize: 10 } }]);
-                items.filter(i => i.category === c).forEach(i => body.push([
-                    i.note ? `${i.description}\n${i.note}` : i.description, i.provider || '', fmt(i)]));
+            m.groups.forEach(g => {
+                body.push([{ content: g.name, colSpan: 3, styles: { fillColor: [245, 245, 245], textColor: [161, 98, 7], fontSize: 10 } }]);
+                g.items.forEach(i => body.push([i.note ? `${i.description}\n${i.note}` : i.description, i.provider, i.price]));
             });
             doc.autoTable({
-                head: [[t('Description'), t('Provider'), t('Price')]],
+                head: [m.head],
                 body, startY: hy + 7,
                 styles: { font: fontUsed, fontSize: 9, overflow: 'linebreak', cellPadding: 2.2 },
                 headStyles: { fillColor: [234, 179, 8], textColor: [5, 5, 5] },
                 columnStyles: { 0: { cellWidth: 112 }, 1: { cellWidth: 30, textColor: [90, 90, 90] }, 2: { halign: 'right' } },
                 didDrawPage: d => {
                     doc.setFontSize(7); doc.setTextColor(140);
-                    doc.text(`${cat.name}${cat.revision ? ' · ' + t('rev.') + ' ' + cat.revision : ''} · ${doc.internal.getNumberOfPages()}`, 196, 290, { align: 'right' });
+                    doc.text(`${m.pageFoot} · ${doc.internal.getNumberOfPages()}`, 196, 290, { align: 'right' });
                     doc.setTextColor(0);
                 },
             });
 
             // Foot: the VAT note, the disclaimer, and a QR to the live catalog when it has a public link.
-            const notes = [t('Prices are before VAT unless stated otherwise.'), cat.disclaimer].filter(Boolean);
+            const notes = m.notes, qr = m.qr;
             let y = doc.lastAutoTable.finalY + 8;
-            if (cat.url && y + 34 > 285) { doc.addPage(); y = 16; }
-            if (cat.url) {
-                doc.addImage(qrPng(cat.url, 300), 'PNG', 168, y - 2, 28, 28);
-                doc.link(168, y - 2, 28, 28, { url: cat.url });
+            if (qr && y + 34 > 285) { doc.addPage(); y = 16; }
+            if (qr) {
+                doc.addImage(qr.src, 'PNG', 168, y - 2, 28, 28);
+                doc.link(168, y - 2, 28, 28, { url: qr.url });
                 doc.setFontSize(7); doc.setTextColor(90);
-                doc.text(t('Catalog and prices'), 182, y + 30, { align: 'center' });
+                doc.text(qr.caption, 182, y + 30, { align: 'center' });
             }
             doc.setFontSize(8); doc.setTextColor(90);
-            notes.forEach(n => doc.splitTextToSize(n, cat.url ? 148 : 182).forEach(ln => {
+            notes.forEach(n => doc.splitTextToSize(n, qr ? 148 : 182).forEach(ln => {
                 if (y > 285) { doc.addPage(); y = 16; }
                 doc.text(ln, 14, y); y += 4;
             }));
             doc.setTextColor(0);
-            const slug = String(cat.name || 'catalog').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w-]+/g, '-').replace(/^-|-$/g, '').toLowerCase();
-            return { doc, name: `${slug || 'catalog'}${cat.revision ? '-r' + String(cat.revision).replace(/[^\w.-]/g, '') : ''}.pdf` };
+            return { doc, name: catalogFileName(cat) + '.pdf' };
         }
 
         async function buildPDF() {
+            const q = quoteData();
             const doc = newPdfDoc();
 
             const fontUsed = await pdfFont(doc);
 
-            const targetCurr = appState.config.targetCurrency;
-            const vatPct = appState.config.vatRate;
-
             doc.setFont(fontUsed);
-            const meta = appState.meta || {};
             doc.setFontSize(16);
-            doc.text(appState.config.orgName, 14, 20);
+            doc.text(q.org, 14, 20);
             doc.setFontSize(10);
             let hy = 28;
-            doc.text(`${t('Date')}: ${new Date().toLocaleDateString()}`, 14, hy);
-            if (meta.quoteNo)    { hy += 6; doc.text(`${t('Quote #')}: ${meta.quoteNo}`, 14, hy); }
-            if (meta.validUntil) { hy += 6; doc.text(`${t('Valid Until')}: ${meta.validUntil}`, 14, hy); }
-            if (meta.client)     { hy += 6; doc.text(`${t('Bill To')}: ${meta.client}`, 14, hy); }
+            q.lines.forEach((ln, i) => { if (i) hy += 6; doc.text(ln, 14, hy); });
 
-            const fis = fiscalCard();
-            if (fis) {
+            if (q.fiscal) {
                 // Wrapped, not placed: the lines are free-form strings from
                 // Fiscal, and an unwrapped razon social runs off the page and
                 // under the logo drawn at x=168.
                 doc.setFontSize(8);
-                const head = fis.label || fis.country || '';
-                doc.splitTextToSize((head ? head + ' — ' : '') + fis.lines.join('  ·  '), 150)
-                   .forEach(ln => { hy += 4.5; doc.text(ln, 14, hy); });
+                doc.splitTextToSize(q.fiscal, 150).forEach(ln => { hy += 4.5; doc.text(ln, 14, hy); });
                 doc.setFontSize(10);
             }
 
-            if (appState.config.logoData) {
-                try { doc.addImage(appState.config.logoData, 'PNG', 168, 12, 26, 26 * (appState.config.logoAspect || 1)); } catch(e){}
+            if (q.logo) {
+                try { doc.addImage(q.logo.src, 'PNG', 168, 12, 26, 26 * q.logo.aspect); } catch(e){}
             }
 
-            let subtotal = 0;
-            const body = appState.items.map(i => {
-                const qty = i.qty || 1;
-                const rate = getRate(i.currency, targetCurr);
-                const netUnitSrc = i.stripVat ? i.price / (1 + (vatPct/100)) : i.price;
-                const netUnit = netUnitSrc * rate;
-                const lineNet = netUnit * qty;
-                subtotal += lineNet;
-                return [qty, i.desc, i.provider || '', QuoteCatalog.safeLink(i.link), `${netUnit.toFixed(2)} ${targetCurr}`, `${lineNet.toFixed(2)} ${targetCurr}`];
-            });
-            const vatAmount = subtotal * (vatPct/100);
-            const total = subtotal + vatAmount;
-
+            const span = q.head.length - 1;
             doc.autoTable({
-                head: [[t('Qty'), t('Description'), t('Provider'), t('Link'), t('Unit (net)'), t('Amount (net)')]],
-                body: body,
-                foot: [
-                    [{ content: t('Subtotal'), colSpan: 5, styles: { halign: 'right' } }, `${subtotal.toFixed(2)} ${targetCurr}`],
-                    [{ content: `${t('VAT')} (${vatPct}%)`, colSpan: 5, styles: { halign: 'right' } }, `${vatAmount.toFixed(2)} ${targetCurr}`],
-                    [{ content: t('TOTAL (Inc. VAT)'), colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, { content: `${total.toFixed(2)} ${targetCurr}`, styles: { fontStyle: 'bold' } }]
-                ],
+                head: [q.head],
+                body: q.rows,
+                foot: q.foot.map(f => f.bold
+                    ? [{ content: f.label, colSpan: span, styles: { halign: 'right', fontStyle: 'bold' } }, { content: f.value, styles: { fontStyle: 'bold' } }]
+                    : [{ content: f.label, colSpan: span, styles: { halign: 'right' } }, f.value]),
                 startY: hy + 6,
                 styles: { font: fontUsed, fontSize: 9, overflow: 'linebreak' },
                 headStyles: { fillColor: [234, 179, 8], textColor: [5, 5, 5] },
@@ -2376,11 +2434,11 @@
                     }
                 }
             });
-            const notes = [fxLine(), QuoteCatalog.revisionLine(appState.items), disclaimerText()].filter(Boolean), qr = qrTarget();
+            const notes = q.notes, qr = q.qr;
             let y = doc.lastAutoTable.finalY + 8;
             if (qr && y + 32 > 290) { doc.addPage(); y = 16; }
             if (qr) {
-                doc.addImage(qrPng(qr.url, 300), 'PNG', 168, y - 2, 28, 28);
+                doc.addImage(qr.src, 'PNG', 168, y - 2, 28, 28);
                 doc.setFontSize(7); doc.setTextColor(90);
                 doc.splitTextToSize(qr.caption, 34).slice(0, 2).forEach((ln, i) => doc.text(ln, 182, y + 30 + i * 3, { align: 'center' }));
                 doc.link(168, y - 2, 28, 28, { url: qr.url });
